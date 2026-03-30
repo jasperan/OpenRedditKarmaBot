@@ -1,0 +1,1768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenRedditKarmaBot - Build Social Karma with Undetectable AI</title>
+
+<!-- ============================================================
+     FONTS: Clash Display + Satoshi from Fontshare
+     ============================================================ -->
+<link href="https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&f[]=satoshi@300,400,500,700&display=swap" rel="stylesheet">
+
+<style>
+/* ==============================================================
+   VIEWPORT BASE CSS (FULL INCLUSION)
+   Ensures every slide is exactly one viewport tall with scroll-snap.
+   ============================================================== */
+html, body { height: 100%; overflow-x: hidden; }
+html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+.slide {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.slide-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-height: 100%;
+  overflow: hidden;
+  padding: var(--slide-padding);
+}
+:root {
+  --title-size: clamp(1.5rem, 5vw, 4rem);
+  --h2-size: clamp(1.25rem, 3.5vw, 2.5rem);
+  --h3-size: clamp(1rem, 2.5vw, 1.75rem);
+  --body-size: clamp(0.75rem, 1.5vw, 1.125rem);
+  --small-size: clamp(0.65rem, 1vw, 0.875rem);
+  --slide-padding: clamp(1rem, 4vw, 4rem);
+  --content-gap: clamp(0.5rem, 2vw, 2rem);
+  --element-gap: clamp(0.25rem, 1vw, 1rem);
+
+  /* Neon Cyber palette */
+  --bg-deep: #0a0f1c;
+  --bg-secondary: #111827;
+  --cyan: #00ffcc;
+  --magenta: #ff00aa;
+  --cyan-dim: rgba(0, 255, 204, 0.15);
+  --magenta-dim: rgba(255, 0, 170, 0.15);
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --code-bg: rgba(0, 255, 204, 0.06);
+  --card-bg: rgba(17, 24, 39, 0.8);
+  --card-border: rgba(0, 255, 204, 0.2);
+}
+.card, .container, .content-box { max-width: min(90vw, 1000px); max-height: min(80vh, 700px); }
+.feature-list, .bullet-list { gap: clamp(0.4rem, 1vh, 1rem); }
+.feature-list li, .bullet-list li { font-size: var(--body-size); line-height: 1.4; }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+  gap: clamp(0.5rem, 1.5vw, 1rem);
+}
+img, .image-container { max-width: 100%; max-height: min(50vh, 400px); object-fit: contain; }
+
+/* Short viewport overrides */
+@media (max-height: 700px) {
+  :root {
+    --slide-padding: clamp(0.75rem, 3vw, 2rem);
+    --content-gap: clamp(0.4rem, 1.5vw, 1rem);
+    --title-size: clamp(1.25rem, 4.5vw, 2.5rem);
+    --h2-size: clamp(1rem, 3vw, 1.75rem);
+  }
+}
+@media (max-height: 600px) {
+  :root {
+    --slide-padding: clamp(0.5rem, 2.5vw, 1.5rem);
+    --content-gap: clamp(0.3rem, 1vw, 0.75rem);
+    --title-size: clamp(1.1rem, 4vw, 2rem);
+    --body-size: clamp(0.7rem, 1.2vw, 0.95rem);
+  }
+  .nav-dots, .keyboard-hint, .decorative { display: none; }
+}
+@media (max-height: 500px) {
+  :root {
+    --slide-padding: clamp(0.4rem, 2vw, 1rem);
+    --title-size: clamp(1rem, 3.5vw, 1.5rem);
+    --h2-size: clamp(0.9rem, 2.5vw, 1.25rem);
+    --body-size: clamp(0.65rem, 1vw, 0.85rem);
+  }
+}
+@media (max-width: 600px) {
+  :root { --title-size: clamp(1.25rem, 7vw, 2.5rem); }
+  .grid { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.2s !important;
+  }
+  html { scroll-behavior: auto; }
+}
+
+
+/* ==============================================================
+   GLOBAL RESET & TYPOGRAPHY
+   ============================================================== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Satoshi', sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Clash Display', sans-serif;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+h1 { font-size: var(--title-size); }
+h2 { font-size: var(--h2-size); }
+h3 { font-size: var(--h3-size); }
+p, li { font-size: var(--body-size); }
+.small-text { font-size: var(--small-size); }
+
+
+/* ==============================================================
+   NEON GLOW EFFECTS
+   ============================================================== */
+.neon-cyan {
+  color: var(--cyan);
+  text-shadow: 0 0 7px var(--cyan), 0 0 20px rgba(0, 255, 204, 0.4);
+}
+.neon-magenta {
+  color: var(--magenta);
+  text-shadow: 0 0 7px var(--magenta), 0 0 20px rgba(255, 0, 170, 0.4);
+}
+.neon-border {
+  border: 1px solid var(--card-border);
+  box-shadow: 0 0 10px rgba(0, 255, 204, 0.08), inset 0 0 10px rgba(0, 255, 204, 0.03);
+}
+.neon-border-magenta {
+  border: 1px solid rgba(255, 0, 170, 0.2);
+  box-shadow: 0 0 10px rgba(255, 0, 170, 0.08), inset 0 0 10px rgba(255, 0, 170, 0.03);
+}
+
+
+/* ==============================================================
+   GLITCH TEXT EFFECT (title slide only)
+   ============================================================== */
+.glitch {
+  position: relative;
+  display: inline-block;
+}
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+.glitch::before {
+  color: var(--cyan);
+  z-index: -1;
+  animation: glitch-shift 3s infinite linear alternate-reverse;
+  clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+}
+.glitch::after {
+  color: var(--magenta);
+  z-index: -2;
+  animation: glitch-shift 2s infinite linear alternate;
+  clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
+}
+@keyframes glitch-shift {
+  0%, 90% { transform: translate(0); }
+  92% { transform: translate(-3px, 1px); }
+  94% { transform: translate(3px, -1px); }
+  96% { transform: translate(-2px, -1px); }
+  98% { transform: translate(2px, 1px); }
+  100% { transform: translate(0); }
+}
+
+
+/* ==============================================================
+   GRID PATTERN OVERLAY (alternating slides)
+   ============================================================== */
+.grid-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0, 255, 204, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 204, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+.grid-bg .slide-content { position: relative; z-index: 1; }
+
+
+/* ==============================================================
+   SLIDE BACKGROUNDS
+   ============================================================== */
+.slide { background: var(--bg-deep); }
+.slide-alt { background: var(--bg-secondary); }
+
+
+/* ==============================================================
+   REVEAL ANIMATIONS
+   Triggered by Intersection Observer adding .visible class.
+   ============================================================== */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+/* Staggered delays for child elements */
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+.reveal-delay-5 { transition-delay: 0.5s; }
+.reveal-delay-6 { transition-delay: 0.6s; }
+
+
+/* ==============================================================
+   PULSE ANIMATION (for key stats / numbers)
+   ============================================================== */
+@keyframes pulse-glow {
+  0%, 100% { text-shadow: 0 0 7px var(--cyan), 0 0 20px rgba(0, 255, 204, 0.3); }
+  50% { text-shadow: 0 0 14px var(--cyan), 0 0 40px rgba(0, 255, 204, 0.6), 0 0 60px rgba(0, 255, 204, 0.2); }
+}
+.pulse { animation: pulse-glow 2.5s ease-in-out infinite; }
+
+
+/* ==============================================================
+   CARD COMPONENTS
+   ============================================================== */
+.cyber-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: clamp(0.6rem, 1.5vw, 1.25rem);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.cyber-card:hover {
+  border-color: var(--cyan);
+  box-shadow: 0 0 20px rgba(0, 255, 204, 0.15);
+}
+.cyber-card h3 {
+  font-size: clamp(0.85rem, 1.8vw, 1.2rem);
+  margin-bottom: clamp(0.2rem, 0.5vw, 0.5rem);
+}
+.cyber-card p {
+  color: var(--text-secondary);
+  font-size: var(--small-size);
+  line-height: 1.4;
+}
+.card-icon {
+  font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+  margin-bottom: clamp(0.2rem, 0.5vw, 0.4rem);
+  display: block;
+}
+
+
+/* ==============================================================
+   CODE BLOCKS
+   ============================================================== */
+.code-block {
+  background: var(--code-bg);
+  border: 1px solid rgba(0, 255, 204, 0.15);
+  border-radius: 6px;
+  padding: clamp(0.5rem, 1.5vw, 1rem);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: clamp(0.6rem, 1.1vw, 0.85rem);
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--text-primary);
+}
+.code-block .kw { color: var(--magenta); }
+.code-block .fn { color: var(--cyan); }
+.code-block .str { color: #fbbf24; }
+.code-block .cm { color: #64748b; }
+.code-block .num { color: #c084fc; }
+
+
+/* ==============================================================
+   BULLET LISTS
+   ============================================================== */
+.bullet-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+.bullet-list li {
+  position: relative;
+  padding-left: 1.5em;
+  color: var(--text-secondary);
+}
+.bullet-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 8px;
+  height: 8px;
+  background: var(--cyan);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--cyan);
+}
+.bullet-list li strong { color: var(--text-primary); }
+
+
+/* ==============================================================
+   FLOW / STEP INDICATORS
+   ============================================================== */
+.flow-steps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(0.3rem, 0.8vw, 0.6rem);
+  justify-content: center;
+}
+.flow-step {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  padding: clamp(0.3rem, 0.8vw, 0.6rem) clamp(0.5rem, 1.2vw, 1rem);
+  font-size: var(--small-size);
+  text-align: center;
+  min-width: clamp(60px, 10vw, 100px);
+}
+.flow-step .step-num {
+  color: var(--cyan);
+  font-family: 'Clash Display', sans-serif;
+  font-weight: 700;
+  font-size: clamp(0.8rem, 1.5vw, 1.1rem);
+  display: block;
+}
+.flow-step .step-label {
+  color: var(--text-secondary);
+  font-size: clamp(0.55rem, 0.9vw, 0.75rem);
+}
+.flow-arrow {
+  color: var(--magenta);
+  font-size: clamp(0.8rem, 1.5vw, 1.2rem);
+  opacity: 0.6;
+}
+
+
+/* ==============================================================
+   DIAGRAM: Split Architecture
+   ============================================================== */
+.arch-split {
+  display: flex;
+  gap: clamp(0.5rem, 2vw, 1.5rem);
+  align-items: stretch;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.arch-box {
+  flex: 1;
+  min-width: min(100%, 200px);
+  max-width: 300px;
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: clamp(0.5rem, 1.5vw, 1rem);
+  text-align: center;
+  position: relative;
+}
+.arch-box h3 {
+  font-size: clamp(0.8rem, 1.5vw, 1.1rem);
+  margin-bottom: clamp(0.2rem, 0.5vw, 0.4rem);
+}
+.arch-box p {
+  font-size: var(--small-size);
+  color: var(--text-secondary);
+}
+.arch-connector {
+  display: flex;
+  align-items: center;
+  color: var(--cyan);
+  font-size: clamp(1rem, 2vw, 1.5rem);
+  opacity: 0.5;
+}
+
+
+/* ==============================================================
+   STAT / NUMBER HIGHLIGHT
+   ============================================================== */
+.stat-num {
+  font-family: 'Clash Display', sans-serif;
+  font-size: clamp(1.5rem, 4vw, 3rem);
+  font-weight: 700;
+  color: var(--cyan);
+}
+.stat-label {
+  font-size: var(--small-size);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+
+/* ==============================================================
+   TAG / BADGE
+   ============================================================== */
+.tag {
+  display: inline-block;
+  background: var(--cyan-dim);
+  color: var(--cyan);
+  border: 1px solid rgba(0, 255, 204, 0.3);
+  border-radius: 4px;
+  padding: 0.15em 0.5em;
+  font-size: var(--small-size);
+  font-weight: 500;
+}
+.tag-magenta {
+  background: var(--magenta-dim);
+  color: var(--magenta);
+  border-color: rgba(255, 0, 170, 0.3);
+}
+
+
+/* ==============================================================
+   PROGRESS BAR (top of viewport, fixed)
+   ============================================================== */
+#progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--cyan), var(--magenta));
+  z-index: 1000;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 8px var(--cyan);
+}
+
+
+/* ==============================================================
+   NAVIGATION DOTS (right side, fixed)
+   ============================================================== */
+.nav-dots {
+  position: fixed;
+  right: clamp(0.5rem, 1.5vw, 1.5rem);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.nav-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.3);
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+  padding: 0;
+}
+.nav-dot:hover { background: rgba(148, 163, 184, 0.6); }
+.nav-dot.active {
+  background: var(--cyan);
+  transform: scale(1.4);
+  box-shadow: 0 0 8px var(--cyan);
+}
+
+
+/* ==============================================================
+   KEYBOARD HINT (bottom-right, fixed)
+   ============================================================== */
+.keyboard-hint {
+  position: fixed;
+  bottom: clamp(0.5rem, 1.5vw, 1.5rem);
+  right: clamp(0.5rem, 1.5vw, 1.5rem);
+  z-index: 999;
+  font-size: var(--small-size);
+  color: var(--text-secondary);
+  opacity: 0.4;
+  transition: opacity 0.3s;
+}
+.keyboard-hint:hover { opacity: 0.8; }
+
+
+/* ==============================================================
+   SLIDE NUMBER (bottom-left, fixed)
+   ============================================================== */
+#slide-counter {
+  position: fixed;
+  bottom: clamp(0.5rem, 1.5vw, 1.5rem);
+  left: clamp(0.5rem, 1.5vw, 1.5rem);
+  z-index: 999;
+  font-family: 'Clash Display', sans-serif;
+  font-size: var(--small-size);
+  color: var(--text-secondary);
+  opacity: 0.5;
+}
+
+
+/* ==============================================================
+   TITLE SLIDE SPECIAL STYLING
+   ============================================================== */
+.title-slide .slide-content {
+  align-items: center;
+  text-align: center;
+}
+.title-slide h1 {
+  font-size: clamp(2rem, 7vw, 5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.title-subtitle {
+  font-size: var(--h3-size);
+  color: var(--text-secondary);
+  margin-top: var(--element-gap);
+}
+.title-tagline {
+  font-size: var(--body-size);
+  color: var(--cyan);
+  margin-top: var(--element-gap);
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+
+/* ==============================================================
+   SECTION HEADING CONSISTENT LAYOUT
+   ============================================================== */
+.slide-content h2 {
+  margin-bottom: var(--content-gap);
+}
+.slide-content h2 + p {
+  margin-bottom: var(--content-gap);
+}
+
+
+/* ==============================================================
+   SPECIAL: Typing animation simulation display
+   ============================================================== */
+.typing-demo {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: var(--body-size);
+  background: var(--code-bg);
+  border: 1px solid rgba(0, 255, 204, 0.15);
+  border-radius: 6px;
+  padding: clamp(0.5rem, 1.5vw, 1rem);
+  color: var(--text-primary);
+  min-height: 2em;
+  position: relative;
+}
+.typing-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  background: var(--cyan);
+  vertical-align: text-bottom;
+  animation: blink-cursor 0.8s steps(2) infinite;
+}
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+
+/* ==============================================================
+   CANVAS (particle system sits behind everything)
+   ============================================================== */
+#particle-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+}
+
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     PARTICLE CANVAS BACKGROUND
+     Subtle floating particles in cyan/magenta rendered via JS.
+     ============================================================ -->
+<canvas id="particle-canvas"></canvas>
+
+<!-- ============================================================
+     PROGRESS BAR
+     Width updates as user scrolls through slides.
+     ============================================================ -->
+<div id="progress-bar" style="width: 0%;"></div>
+
+<!-- ============================================================
+     NAVIGATION DOTS
+     One dot per slide, clickable, highlights active slide.
+     ============================================================ -->
+<nav class="nav-dots" id="nav-dots" aria-label="Slide navigation"></nav>
+
+<!-- ============================================================
+     SLIDE COUNTER (bottom-left)
+     ============================================================ -->
+<div id="slide-counter">1 / 25</div>
+
+<!-- ============================================================
+     KEYBOARD HINT (bottom-right)
+     ============================================================ -->
+<div class="keyboard-hint">Arrow keys / Space to navigate</div>
+
+
+<!-- ============================================================
+     SLIDE 1: TITLE
+     "OpenRedditKarmaBot" with glitch effect, subtitle, tagline
+     ============================================================ -->
+<section class="slide title-slide" id="slide-1">
+  <div class="slide-content">
+    <h1 class="glitch reveal" data-text="OpenRedditKarmaBot">OpenRedditKarmaBot</h1>
+    <p class="title-subtitle reveal reveal-delay-1">Build Social Karma with Undetectable AI</p>
+    <p class="title-tagline reveal reveal-delay-2">100% Open Source &middot; Zero Detection &middot; Full Autonomy</p>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 2: THE PROBLEM
+     Reddit karma building is manual and bots get caught
+     ============================================================ -->
+<section class="slide slide-alt grid-bg" id="slide-2">
+  <div class="slide-content" style="max-width: 800px; margin: 0 auto;">
+    <h2 class="reveal">The Problem <span class="neon-magenta">.</span></h2>
+    <ul class="bullet-list reveal reveal-delay-1">
+      <li><strong>Manual karma building eats hours.</strong> Reading threads, crafting replies, matching community tone: it's a full-time grind for anyone managing multiple accounts or building reputation.</li>
+      <li><strong>Existing bots are trivially detectable.</strong> They paste text via clipboard, type at robotic speeds, and leave DOM fingerprints. Reddit's anti-bot systems flag them within days.</li>
+      <li><strong>Banned accounts lose everything.</strong> Years of karma, community standing, and post history: gone in one automated misstep.</li>
+      <li><strong>Generic AI replies stick out.</strong> Copy-pasting ChatGPT output reads like a press release in a meme subreddit. Context matters, and most tools ignore it.</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 3: THE SOLUTION
+     Autonomous Chrome engine overview
+     ============================================================ -->
+<section class="slide" id="slide-3">
+  <div class="slide-content" style="max-width: 800px; margin: 0 auto;">
+    <h2 class="reveal">The Solution <span class="neon-cyan">.</span></h2>
+    <p class="reveal reveal-delay-1" style="color: var(--text-secondary); margin-bottom: var(--content-gap);">
+      An autonomous Chrome extension that reads what humans read, thinks before it speaks, and types like a real person.
+    </p>
+    <ul class="bullet-list reveal reveal-delay-2">
+      <li><strong>Context extraction</strong> pulls the full thread tree: post title, body, flair, every comment and its depth.</li>
+      <li><strong>AI reply generation</strong> sends that context to any OpenAI-compatible LLM, with community tone profiling baked into the prompt.</li>
+      <li><strong>Biometric typing simulation</strong> plays keystrokes through the browser's trusted input pipeline: variable WPM, bigram timing, micro-pauses, and simulated typos.</li>
+      <li><strong>Zero footprint.</strong> No clipboard access, no injected DOM nodes, no detectable automation signatures.</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 4: ARCHITECTURE OVERVIEW
+     Hybrid split diagram: Extension <-> Backend <-> vLLM
+     ============================================================ -->
+<section class="slide slide-alt grid-bg" id="slide-4">
+  <div class="slide-content" style="max-width: 900px; margin: 0 auto;">
+    <h2 class="reveal" style="text-align: center;">Architecture Overview <span class="neon-cyan">.</span></h2>
+    <div class="arch-split reveal reveal-delay-1">
+      <div class="arch-box neon-border">
+        <span class="card-icon">🧩</span>
+        <h3 class="neon-cyan">Chrome Extension</h3>
+        <p>Manifest V3 &middot; Content scripts<br>DOM scanner &middot; Popup UI<br>Biometric typing engine</p>
+      </div>
+      <div class="arch-connector">&#8596;</div>
+      <div class="arch-box neon-border-magenta">
+        <span class="card-icon">&#9889;</span>
+        <h3 class="neon-magenta">FastAPI Backend</h3>
+        <p>Reddit .json API &middot; Tone analyzer<br>Prompt engine &middot; SSE streaming<br>CORS middleware</p>
+      </div>
+      <div class="arch-connector">&#8596;</div>
+      <div class="arch-box neon-border">
+        <span class="card-icon">🧠</span>
+        <h3 class="neon-cyan">vLLM / LLM</h3>
+        <p>OpenAI-compatible API<br>Qwen3.5-27B default<br>Streaming chat completions</p>
+      </div>
+    </div>
+    <p class="small-text reveal reveal-delay-2" style="text-align: center; color: var(--text-secondary); margin-top: var(--content-gap);">
+      Extension communicates with backend over HTTP. Backend handles all Reddit API calls and LLM inference. No Reddit credentials touch the extension.
+    </p>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 5: DATA FLOW
+     7-step flow diagram
+     ============================================================ -->
+<section class="slide" id="slide-5">
+  <div class="slide-content" style="max-width: 950px; margin: 0 auto;">
+    <h2 class="reveal" style="text-align: center;">Data Flow <span class="neon-magenta">.</span></h2>
+    <div class="flow-steps reveal reveal-delay-1">
+      <div class="flow-step">
+        <span class="step-num">1</span>
+        <span class="step-label">Browse</span>
+      </div>
+      <span class="flow-arrow">&#10132;</span>
+      <div class="flow-step">
+        <span class="step-num">2</span>
+        <span class="step-label">Scan DOM</span>
+      </div>
+      <span class="flow-arrow">&#10132;</span>
+      <div class="flow-step">
+        <span class="step-num">3</span>
+        <span class="step-label">Extract</span>
+      </div>
+      <span class="flow-arrow">&#10132;</span>
+      <div class="flow-step">
+        <span class="step-num">4</span>
+        <span class="step-label">Generate</span>
+      </div>
+      <span class="flow-arrow">&#10132;</span>
+      <div class="flow-step">
+        <span class="step-num">5</span>
+        <span class="step-label">Select</span>
+      </div>
+      <span class="flow-arrow">&#10132;</span>
+      <div class="flow-step">
+        <span class="step-num">6</span>
+        <span class="step-label">Type</span>
+      </div>
+      <span class="flow-arrow">&#10132;</span>
+      <div class="flow-step">
+        <span class="step-num">7</span>
+        <span class="step-label">Engage</span>
+      </div>
+    </div>
+    <ul class="bullet-list reveal reveal-delay-2" style="margin-top: var(--content-gap); max-width: 700px; margin-left: auto; margin-right: auto;">
+      <li><strong>Browse:</strong> User navigates to any Reddit thread normally</li>
+      <li><strong>Scan DOM:</strong> Content script reads post + comment tree from the page</li>
+      <li><strong>Extract:</strong> Backend fetches the full thread via Reddit's .json API</li>
+      <li><strong>Generate:</strong> Prompt engine builds context-aware prompts, LLM produces drafts</li>
+      <li><strong>Select:</strong> User picks the best draft from multiple angles</li>
+      <li><strong>Type:</strong> Biometric engine simulates human keystroke patterns</li>
+      <li><strong>Engage:</strong> Reply appears in the comment box, indistinguishable from manual input</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 6: CHROME EXTENSION
+     Manifest V3, content scripts, popup UI, service worker
+     ============================================================ -->
+<section class="slide slide-alt grid-bg" id="slide-6">
+  <div class="slide-content" style="max-width: 800px; margin: 0 auto;">
+    <h2 class="reveal">Chrome Extension <span class="neon-cyan">.</span></h2>
+    <div class="grid reveal reveal-delay-1" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));">
+      <div class="cyber-card">
+        <span class="card-icon">📋</span>
+        <h3>Manifest V3</h3>
+        <p>Modern extension format. Service worker replaces persistent background page. Declarative net requests.</p>
+      </div>
+      <div class="cyber-card">
+        <span class="card-icon">📜</span>
+        <h3>Content Scripts</h3>
+        <p>Injected into Reddit pages. Handles DOM scanning, reply box detection, and keystroke simulation.</p>
+      </div>
+      <div class="cyber-card">
+        <span class="card-icon">🎛️</span>
+        <h3>Popup UI</h3>
+        <p>Dark-themed control panel. Scan, generate, select drafts, and type. All in one click flow.</p>
+      </div>
+      <div class="cyber-card">
+        <span class="card-icon">⚡</span>
+        <h3>Zero Dependencies</h3>
+        <p>Pure vanilla JavaScript. No React, no build step, no node_modules. Just load and go.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 7: DOM SCANNER
+     Dual-mode: New Reddit + Old Reddit
+     ============================================================ -->
+<section class="slide" id="slide-7">
+  <div class="slide-content" style="max-width: 800px; margin: 0 auto;">
+    <h2 class="reveal">DOM Scanner <span class="neon-magenta">.</span></h2>
+    <p class="reveal reveal-delay-1" style="color: var(--text-secondary); margin-bottom: var(--content-gap);">
+      Dual-mode scanner that handles both New Reddit (shreddit-* web components) and Old Reddit (classic .thing/.entry selectors).
+    </p>
+    <ul class="bullet-list reveal reveal-delay-2">
+      <li><strong>Post metadata:</strong> Title, body, subreddit, author, score, flair, comment count</li>
+      <li><strong>Comment tree:</strong> Full nested structure with author, body, score, and depth level</li>
+      <li><strong>Target detection:</strong> Identifies which comment the user wants to reply to based on focus/selection</li>
+      <li><strong>URL extraction:</strong> Pulls the thread permalink for the backend's .json API fetch</li>
+    </ul>
+    <div class="code-block reveal reveal-delay-3" style="margin-top: var(--content-gap);">
+<span class="cm">// Content script scans the active thread</span>
+<span class="kw">const</span> thread = {
+  url: <span class="fn">window</span>.location.href,
+  post_title: <span class="fn">document</span>.<span class="fn">querySelector</span>(<span class="str">'h1'</span>)?.textContent,
+  subreddit: <span class="fn">location</span>.pathname.<span class="fn">split</span>(<span class="str">'/'</span>)[<span class="num">2</span>],
+  comments: <span class="fn">parseCommentTree</span>(rootNode)
+};</div>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 8: CONTEXT EXTRACTION
+     DOM scraping + Reddit .json API for full thread trees
+     ============================================================ -->
+<section class="slide slide-alt grid-bg" id="slide-8">
+  <div class="slide-content" style="max-width: 800px; margin: 0 auto;">
+    <h2 class="reveal">Context Extraction <span class="neon-cyan">.</span></h2>
+    <p class="reveal reveal-delay-1" style="color: var(--text-secondary); margin-bottom: var(--content-gap);">
+      Two layers of context. The extension grabs what's visible on the page. The backend fetches the complete thread via Reddit's public .json endpoint, giving us every nested reply.
+    </p>
+    <div class="code-block reveal reveal-delay-2">
+<span class="cm"># RedditContextService.fetch_thread()</span>
+json_url = url.rstrip(<span class="str">"/"</span>) + <span class="str">".json"</span>
+resp = <span class="kw">await</span> http.<span class="fn">get</span>(json_url, headers=self.headers)
+
+post = <span class="fn">RedditPost</span>(
+    title=post_data[<span class="str">"title"</span>],
+    subreddit=post_data[<span class="str">"subreddit"</span>],
+    score=post_data[<span class="str">"score"</span>],
+    flair=post_data.get(<span class="str">"link_flair_text"</span>, <span class="str">""</span>),
+)
+<span class="cm"># Recursively parse nested comment tree</span>
+self.<span class="fn">_parse_comments</span>(data[<span class="num">1</span>], comments)</div>
+    <ul class="bullet-list reveal reveal-delay-3" style="margin-top: var(--content-gap);">
+      <li><strong>Recursive parsing</strong> walks the full reply tree, preserving depth and nesting</li>
+      <li><strong>Top 15 comments</strong> included in context to keep prompts under token limits</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 9: FASTAPI BACKEND
+     5 endpoints overview
+     ============================================================ -->
+<section class="slide" id="slide-9">
+  <div class="slide-content" style="max-width: 800px; margin: 0 auto;">
+    <h2 class="reveal">FastAPI Backend <span class="neon-magenta">.</span></h2>
+    <div class="grid reveal reveal-delay-1" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); margin-bottom: var(--content-gap);">
+      <div class="cyber-card">
+        <h3 class="neon-cyan">/api/generate</h3>
+        <p>SSE stream of draft replies with angle labels</p>
+      </div>
+      <div class="cyber-card">
+        <h3 class="neon-cyan">/api/analyze-tone</h3>
+        <p>Returns CultureProfile for any subreddit</p>
+      </div>
+      <div class="cyber-card">
+        <h3 class="neon-cyan">/api/health</h3>
+        <p>Backend + vLLM connection status</p>
+      </div>
+      <div class="cyber-card">
+        <h3 class="neon-cyan">/api/models</h3>
+        <p>Lists available models from vLLM</p>
+      </div>
+      <div class="cyber-card">
+        <h3 class="neon-cyan">/api/settings</h3>
+        <p>GET/PATCH runtime config (model, temp, WPM)</p>
+      </div>
+    </div>
+    <ul class="bullet-list reveal reveal-delay-2">
+      <li><strong>CORS wide open</strong> for local extension communication</li>
+      <li><strong>Pydantic models</strong> validate every request and response</li>
+      <li><strong>SSE streaming</strong> via sse-starlette delivers drafts as they finish</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 10: vLLM INTEGRATION
+     OpenAI-compatible, streaming, model config
+     ============================================================ -->
+<section class="slide slide-alt grid-bg" id="slide-10">
+  <div class="slide-content" style="max-width: 800px; margin: 0 auto;">
+    <h2 class="reveal">vLLM Integration <span class="neon-cyan">.</span></h2>
+    <p class="reveal reveal-delay-1" style="color: var(--text-secondary); margin-bottom: var(--content-gap);">
+      Any model behind an OpenAI-compatible API works out of the box. vLLM, Ollama, OpenAI itself, TGI: just point the base URL.
+    </p>
+    <div class="code-block reveal reveal-delay-2">
+<span class="kw">class</span> <span class="fn">VLLMClient</span>:
+    <span class="kw">async def</span> <span class="fn">generate</span>(self, system_prompt, user_prompt,
+                      temperature=<span class="num">0.8</span>, max_tokens=<span class="num">300</span>):
+        payload = {
+            <span class="str">"model"</span>: self.model,
+            <span class="str">"messages"</span>: [
+                {<span class="str">"role"</span>: <span class="str">"system"</span>, <span class="str">"content"</span>: system_prompt},
+                {<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: user_prompt},
+            ],
+            <span class="str">"stream"</span>: <span class="kw">False</span>,
+        }</div>
+    <ul class="bullet-list reveal reveal-delay-3" style="margin-top: var(--content-gap);">
+      <li><strong>Default model:</strong> Qwen3.5-27B with thinking mode disabled</li>
+      <li><strong>Streaming + non-streaming</strong> paths for different use cases</li>
+      <li><strong>httpx async client</strong> with configurable timeouts (60s generate, 120s stream)</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 11: TONE ANALYZER
+     Culture profiling with formality score, slang, emoji
+     ============================================================ -->
+<section class="slide" id="slide-11">
+  <div class="slide-content" style="max-width: 800px; margin: 0 auto;">
+    <h2 class="reveal">Tone Analyzer <span class="neon-magenta">.</span></h2>
+    <p class="reveal reveal-delay-1" style="color: var(--text-secondary); margin-bottom: var(--content-gap);">
+      Profiles a subreddit's culture by analyzing recent posts and comments. The output feeds directly into the system prompt so the LLM matches the community's voice.
+    </p>
+    <div class="grid reveal reveal-delay-2" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));">
+      <div class="cyber-card" style="text-align: center;">
+        <span class="stat-num pulse">0.0</span>
+        <span class="stat-label">to 1.0</span>
+        <p style="margin-top: 0.3em;">Formality Score</p>
+      </div>
+      <div class="cyber-card" style="text-align: center;">
+        <span class="stat-num neon-magenta" style="animation: pulse-glow 2.5s ease-in-out infinite;">24</span>
+        <span class="stat-label">tracked</span>
+        <p style="margin-top: 0.3em;">Slang Words</p>
+      </div>
+      <div class="cyber-card" style="text-align: center;">
+        <span class="stat-num pulse">4</span>
+        <span class="stat-label">categories</span>
+        <p style="margin-top: 0.3em;">Tone Labels</p>
+      </div>
+    </div>
+    <ul class="bullet-list reveal reveal-delay-3" style="margin-top: var(--content-gap);">
+      <li><strong>Auto-detection:</strong> Samples 10 hot posts + thread comments to build the profile</li>
+      <li><strong>Emoji + slang frequency</strong> tracked per-comment average</li>
+      <li><strong>Output tones:</strong> Professional, Casual, Meme-heavy, or Concise</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 12: MULTI-ANGLE GENERATION
+     5 angles: agree, counterpoint, anecdote, humor, practical
+     ============================================================ -->
+<section class="slide slide-alt grid-bg" id="slide-12">
+  <div class="slide-content" style="max-width: 900px; margin: 0 auto;">
+    <h2 class="reveal" style="text-align: center;">Multi-Angle Generation <span class="neon-cyan">.</span></h2>
+    <div class="grid reveal reveal-delay-1" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));">
+      <div class="cyber-card">
+        <span class="card-icon">👍</span>
+        <h3>Agree &amp; Expand</h3>
+        <p>Build on the main point with supporting evidence or a personal insight.</p>
+      </div>
+      <div class="cyber-card">
+        <span class="card-icon">🔄</span>
+        <h3>Counterpoint</h3>
+        <p>Respectful alternative perspective. Fresh angle without being combative.</p>
+      </div>
+      <div class="cyber-card">
+        <span class="card-icon">📖</span>
+        <h3>Anecdote</h3>
+        <p>Relevant personal story. Feels genuine and conversational.</p>
+      </div>
+      <div class="cyber-card">
+        <span class="card-icon">😄</span>
+        <h3>Humor &amp; Wit</h3>
+        <p>Natural humor that fits the community. No forced jokes.</p>
+      </div>
+      <div class="cyber-card">
+        <span class="card-icon">🛠️</span>
+        <h3>Practical Advice</h3>
+        <p>Concrete, actionable tips. Specific recommendations, not generic platitudes.</p>
+      </div>
+    </div>
+    <p class="small-text reveal reveal-delay-2" style="text-align: center; color: var(--text-secondary); margin-top: var(--content-gap);">
+      Each draft gets a different angle. Request 1-5 drafts and pick the one that fits.
+    </p>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 13: PROMPT ENGINEERING
+     System prompt structure breakdown
+     ============================================================ -->
+<section class="slide" id="slide-13">
+  <div class="slide-content" style="max-width: 800px; margin: 0 auto;">
+    <h2 class="reveal">Prompt Engineering <span class="neon-magenta">.</span></h2>
+    <p class="reveal reveal-delay-1" style="color: var(--text-secondary); margin-bottom: var(--content-gap);">
+      Every prompt has four layers bolted together. The LLM receives a full picture of who it's pretending to be, where it's posting, and what angle to take.
+    </p>
+    <div class="code-block reveal reveal-delay-2">
+<span class="cm"># System prompt structure</span>
+<span class="str">"You are a real Reddit user in r/{subreddit}."</span>
+
+<span class="cm"># + Culture profile</span>
+<span class="str">"Tone: Casual | Formality: 0.4/1.0"</span>
+<span class="str">"Emoji: rare | Slang: moderate"</span>
+
+<span class="cm"># + Angle directive</span>
+<span class="str">"Share a relevant personal anecdote..."</span>
+
+<span class="cm"># + Rules</span>
+<span class="str">"Match the community's tone exactly"</span>
+<span class="str">"Keep it concise (2-4 sentences)"</span>
+<span class="str">"Output ONLY the comment text"</span></div>
+    <ul class="bullet-list reveal reveal-delay-3" style="margin-top: var(--content-gap);">
+      <li><strong>User prompt</strong> contains the full thread context: post + top 15 comments + target</li>
+      <li><strong>Post body capped</strong> at 1,500 chars to stay within token budget</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 14: BIOMETRIC TYPING ENGINE
+     The core stealth feature
+     ============================================================ -->
+<section class="slide slide-alt grid-bg" id="slide-14">
+  <div class="slide-content" style="max-width: 800px; margin: 0 auto; text-align: center;">
+    <h2 class="reveal">Biometric Typing Engine <span class="neon-cyan">.</span></h2>
+    <p class="reveal reveal-delay-1" style="color: var(--text-secondary); margin-bottom: var(--content-gap); text-align: left; max-width: 700px; margin-left: auto; margin-right: auto;">
+      The thing that makes this bot invisible. Every keystroke is simulated at the hardware event level, with timing patterns that match real human typing behavior.
+    </p>
+    <div class="grid reveal reveal-delay-2" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));">
+      <div class="cyber-card" style="text-align: center;">
+        <span class="stat-num pulse">85</span>
+        <span class="stat-label">WPM default</span>
+      </div>
+      <div class="cyber-card" style="text-align: center;">
+        <span class="stat-num neon-magenta" style="animation: pulse-glow 2.5s ease-in-out infinite;">1.5%</span>
+        <span class="stat-label">typo rate</span>
+      </div>
+      <div class="cyber-card" style="text-align: center;">
+        <span class="stat-num pulse">5</span>
+        <span class="stat-label">timing layers</span>
+      </div>
+    </div>
+    <ul class="bullet-list reveal reveal-delay-3" style="margin-top: var(--content-gap); text-align: left; max-width: 700px; margin-left: auto; margin-right: auto;">
+      <li><strong>Bigram timing model</strong> for character-pair speed variation</li>
+      <li><strong>Gaussian jitter</strong> on every inter-key interval</li>
+      <li><strong>Typo simulation</strong> with adjacent-key errors and backspace correction</li>
+      <li><strong>execCommand injection</strong> for trusted browser events</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 15: BIGRAM TIMING MODEL
+     Common pairs fast, awkward pairs slow
+     ============================================================ -->
+<section class="slide" id="slide-15">
+  <div class="slide-content" style="max-width: 800px; margin: 0 auto;">
+    <h2 class="reveal">Bigram Timing Model <span class="neon-magenta">.</span></h2>
+    <p class="reveal reveal-delay-1" style="color: var(--text-secondary); margin-bottom: var(--content-gap);">
+      Humans type common letter pairs faster than rare ones. The engine models this with per-bigram speed multipliers.
+    </p>
+    <div class="code-block reveal reveal-delay-2">
+<span class="cm">// Bigram speed multipliers</span>
+<span class="kw">const</span> BIGRAM_SPEED = {
+  <span class="str">"th"</span>: <span class="num">0.65</span>,  <span class="cm">// very common, typed fast</span>
+  <span class="str">"he"</span>: <span class="num">0.70</span>,  <span class="cm">// natural flow</span>
+  <span class="str">"in"</span>: <span class="num">0.72</span>,  <span class="cm">// adjacent fingers</span>
+  <span class="str">"er"</span>: <span class="num">0.68</span>,  <span class="cm">// muscle memory</span>
+  <span class="str">"an"</span>: <span class="num">0.75</span>,  <span class="cm">// smooth transition</span>
+  <span class="str">"qx"</span>: <span class="num">1.50</span>,  <span class="cm">// awkward reach</span>
+  <span class="str">"zp"</span>: <span class="num">1.45</span>,  <span class="cm">// rare combo, slow</span>
+  <span class="str">"jk"</span>: <span class="num">1.30</span>,  <span class="cm">// unusual pair</span>
+};</div>
+    <ul class="bullet-list reveal reveal-delay-3" style="margin-top: var(--content-gap);">
+      <li><strong>Sub-1.0 multipliers</strong> speed up common English pairs like "th", "er", "in"</li>
+      <li><strong>Above-1.0 multipliers</strong> slow down rare or cross-hand reaches</li>
+      <li>Base interval derived from the configured WPM (default 85)</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 16: TYPING VARIANCE
+     Gaussian jitter, micro-pauses, thinking pauses
+     ============================================================ -->
+<section class="slide slide-alt grid-bg" id="slide-16">
+  <div class="slide-content" style="max-width: 800px; margin: 0 auto;">
+    <h2 class="reveal">Typing Variance <span class="neon-cyan">.</span></h2>
+    <p class="reveal reveal-delay-1" style="color: var(--text-secondary); margin-bottom: var(--content-gap);">
+      Real humans don't type at constant speed. The engine layers multiple sources of randomness on top of each keystroke.
+    </p>
+    <div class="grid reveal reveal-delay-2" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));">
+      <div class="cyber-card">
+        <span class="card-icon">📊</span>
+        <h3>Gaussian Jitter</h3>
+        <p>Every inter-key delay gets a random offset from a normal distribution. No two keystrokes are the same speed.</p>
+      </div>
+      <div class="cyber-card">
+        <span class="card-icon">⏸️</span>
+        <h3>Micro-Pauses</h3>
+        <p>Brief hesitations (50-150ms) inserted randomly within words. Simulates momentary distraction.</p>
+      </div>
+      <div class="cyber-card">
+        <span class="card-icon">💭</span>
+        <h3>Thinking Pauses</h3>
+        <p>Longer pauses (200-800ms) at sentence boundaries and paragraph breaks. Mimics composing thoughts.</p>
+      </div>
+      <div class="cyber-card">
+        <span class="card-icon">⎵</span>
+        <h3>Word Boundaries</h3>
+        <p>Space key gets slightly longer delay than letter keys. Natural rhythm between words.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 17: TYPO SIMULATION
+     Adjacent key errors, backspace, retype
+     ============================================================ -->
+<section class="slide" id="slide-17">
+  <div class="slide-content" style="max-width: 800px; margin: 0 auto;">
+    <h2 class="reveal">Typo Simulation <span class="neon-magenta">.</span></h2>
+    <p class="reveal reveal-delay-1" style="color: var(--text-secondary); margin-bottom: var(--content-gap);">
+      Perfect typing is a red flag. The engine introduces realistic typos at a 1.5% character rate, then corrects them naturally.
+    </p>
+    <div class="code-block reveal reveal-delay-2">
+<span class="cm">// Typo lifecycle (per character)</span>
+<span class="cm">// 1. Roll the dice: 1.5% chance of error</span>
+<span class="kw">if</span> (<span class="fn">Math</span>.<span class="fn">random</span>() < <span class="num">0.015</span>) {
+  <span class="cm">// 2. Pick adjacent key on QWERTY layout</span>
+  <span class="fn">typeChar</span>(<span class="fn">getAdjacentKey</span>(intended));
+  <span class="cm">// 3. Brief pause (recognition moment)</span>
+  <span class="kw">await</span> <span class="fn">delay</span>(<span class="fn">randomBetween</span>(<span class="num">100</span>, <span class="num">300</span>));
+  <span class="cm">// 4. Backspace to delete the error</span>
+  <span class="fn">typeKey</span>(<span class="str">"Backspace"</span>);
+  <span class="cm">// 5. Small pause, then type correct char</span>
+  <span class="kw">await</span> <span class="fn">delay</span>(<span class="fn">randomBetween</span>(<span class="num">50</span>, <span class="num">150</span>));
+  <span class="fn">typeChar</span>(intended);
+}</div>
+    <ul class="bullet-list reveal reveal-delay-3" style="margin-top: var(--content-gap);">
+      <li><strong>QWERTY adjacency map:</strong> 'f' might become 'd', 'g', 'r', or 'v'</li>
+      <li><strong>Recognition pause:</strong> 100-300ms delay before the correction starts</li>
+      <li><strong>Natural correction:</strong> Backspace then retype, not instant replacement</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 18: ANTI-DETECTION
+     execCommand, no clipboard, zero DOM footprint
+     ============================================================ -->
+<section class="slide slide-alt grid-bg" id="slide-18">
+  <div class="slide-content" style="max-width: 800px; margin: 0 auto;">
+    <h2 class="reveal">Anti-Detection <span class="neon-cyan">.</span></h2>
+    <p class="reveal reveal-delay-1" style="color: var(--text-secondary); margin-bottom: var(--content-gap);">
+      Every aspect is designed to leave no automation fingerprint. The browser itself can't tell this isn't a human.
+    </p>
+    <ul class="bullet-list reveal reveal-delay-2">
+      <li><strong>execCommand('insertText')</strong> injects characters through the browser's trusted input pipeline. React, Angular, and Reddit's own event listeners see real InputEvents.</li>
+      <li><strong>No clipboard access.</strong> Paste detection is the first thing anti-bot systems check. We never touch navigator.clipboard or document.execCommand('paste').</li>
+      <li><strong>Zero DOM footprint.</strong> No injected overlays, no hidden iframes, no MutationObserver residue. The content script reads and types, nothing else.</li>
+      <li><strong>No network signatures.</strong> All LLM communication goes through the backend, not from the extension. Reddit sees zero unusual outbound requests.</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 19: POPUP UI
+     Dark theme, scan/generate/type workflow, draft cards
+     ============================================================ -->
+<section class="slide" id="slide-19">
+  <div class="slide-content" style="max-width: 800px; margin: 0 auto;">
+    <h2 class="reveal">Popup UI <span class="neon-magenta">.</span></h2>
+    <p class="reveal reveal-delay-1" style="color: var(--text-secondary); margin-bottom: var(--content-gap);">
+      Three-step workflow in a compact dark-themed popup. Click the extension icon, scan the thread, generate drafts, pick one, and type it out.
+    </p>
+    <div class="grid reveal reveal-delay-2" style="grid-template-columns: repeat(3, 1fr);">
+      <div class="cyber-card" style="text-align: center;">
+        <span class="card-icon">🔍</span>
+        <h3>1. Scan</h3>
+        <p>One click grabs the full thread context from the current page.</p>
+      </div>
+      <div class="cyber-card" style="text-align: center;">
+        <span class="card-icon">🤖</span>
+        <h3>2. Generate</h3>
+        <p>Pick your tone, draft count, and hit generate. SSE streams drafts in real time.</p>
+      </div>
+      <div class="cyber-card" style="text-align: center;">
+        <span class="card-icon">⌨️</span>
+        <h3>3. Type</h3>
+        <p>Select a draft, click "Type It". Watch the biometric engine work.</p>
+      </div>
+    </div>
+    <ul class="bullet-list reveal reveal-delay-3" style="margin-top: var(--content-gap);">
+      <li><strong>Draft cards</strong> show the angle label (Humor, Counterpoint, etc.) and full text</li>
+      <li><strong>Settings panel</strong> for model, WPM, temperature, and backend URL</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 20: COMMENT INJECTOR
+     Reply box detection, auto-click, optional auto-submit
+     ============================================================ -->
+<section class="slide slide-alt grid-bg" id="slide-20">
+  <div class="slide-content" style="max-width: 800px; margin: 0 auto;">
+    <h2 class="reveal">Comment Injector <span class="neon-cyan">.</span></h2>
+    <p class="reveal reveal-delay-1" style="color: var(--text-secondary); margin-bottom: var(--content-gap);">
+      The injector handles the tricky part: finding and activating Reddit's reply box, then typing into it without triggering any automation detectors.
+    </p>
+    <ul class="bullet-list reveal reveal-delay-2">
+      <li><strong>Reply button detection:</strong> Locates the "Reply" button for the target comment and clicks it programmatically to open the editor.</li>
+      <li><strong>Textarea focus:</strong> Waits for Reddit's reply box to appear in the DOM, then focuses it before typing begins.</li>
+      <li><strong>Content injection:</strong> Biometric engine types each character individually through execCommand. Reddit's editor receives real InputEvents.</li>
+      <li><strong>Optional auto-submit:</strong> Can be configured to click the submit button after typing finishes. Disabled by default for safety.</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 21: CONFIGURATION
+     All configurable parameters
+     ============================================================ -->
+<section class="slide" id="slide-21">
+  <div class="slide-content" style="max-width: 800px; margin: 0 auto;">
+    <h2 class="reveal">Configuration <span class="neon-magenta">.</span></h2>
+    <p class="reveal reveal-delay-1" style="color: var(--text-secondary); margin-bottom: var(--content-gap);">
+      Every parameter is tunable. Defaults work out of the box, but power users can dial in exact behavior.
+    </p>
+    <div class="code-block reveal reveal-delay-2">
+<span class="cm"># Backend settings (Pydantic BaseSettings)</span>
+VLLM_BASE_URL  = <span class="str">"http://localhost:8000/v1"</span>
+VLLM_MODEL     = <span class="str">"qwen3.5:27b"</span>
+TEMPERATURE    = <span class="num">0.8</span>    <span class="cm"># creativity (0.0 - 2.0)</span>
+MAX_TOKENS     = <span class="num">300</span>    <span class="cm"># reply length cap</span>
+DRAFT_COUNT    = <span class="num">3</span>      <span class="cm"># variants per request (1-5)</span>
+
+<span class="cm"># Extension settings</span>
+BACKEND_URL    = <span class="str">"http://localhost:8000"</span>
+WPM            = <span class="num">85</span>     <span class="cm"># typing speed</span>
+AUTO_SUBMIT    = <span class="kw">false</span>  <span class="cm"># click submit after typing</span>
+TONE           = <span class="str">"auto"</span> <span class="cm"># or Professional/Casual/Concise/Meme-heavy</span></div>
+    <p class="small-text reveal reveal-delay-3" style="color: var(--text-secondary); margin-top: var(--content-gap);">
+      Backend reads from <span class="tag">.env</span> file. Extension stores settings in chrome.storage.local.
+    </p>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 22: TECH STACK
+     Python 3.12, FastAPI, httpx, Pydantic, Chrome MV3, vanilla JS
+     ============================================================ -->
+<section class="slide slide-alt grid-bg" id="slide-22">
+  <div class="slide-content" style="max-width: 900px; margin: 0 auto;">
+    <h2 class="reveal" style="text-align: center;">Tech Stack <span class="neon-cyan">.</span></h2>
+    <div class="grid reveal reveal-delay-1" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));">
+      <div class="cyber-card" style="text-align: center;">
+        <span class="card-icon">🐍</span>
+        <h3>Python 3.12</h3>
+        <p>Modern Python with type hints throughout</p>
+      </div>
+      <div class="cyber-card" style="text-align: center;">
+        <span class="card-icon">⚡</span>
+        <h3>FastAPI</h3>
+        <p>Async web framework with auto-generated docs</p>
+      </div>
+      <div class="cyber-card" style="text-align: center;">
+        <span class="card-icon">🌐</span>
+        <h3>httpx</h3>
+        <p>Async HTTP client for Reddit + vLLM calls</p>
+      </div>
+      <div class="cyber-card" style="text-align: center;">
+        <span class="card-icon">📐</span>
+        <h3>Pydantic</h3>
+        <p>Data validation for requests, responses, config</p>
+      </div>
+      <div class="cyber-card" style="text-align: center;">
+        <span class="card-icon">🧩</span>
+        <h3>Chrome MV3</h3>
+        <p>Manifest V3 extension with service worker</p>
+      </div>
+      <div class="cyber-card" style="text-align: center;">
+        <span class="card-icon">📜</span>
+        <h3>Vanilla JS</h3>
+        <p>Zero frontend dependencies. No build step.</p>
+      </div>
+    </div>
+    <div class="reveal reveal-delay-2" style="display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-top: var(--content-gap);">
+      <span class="tag">sse-starlette</span>
+      <span class="tag">uvicorn</span>
+      <span class="tag">pydantic-settings</span>
+      <span class="tag">pytest</span>
+      <span class="tag">pytest-asyncio</span>
+      <span class="tag tag-magenta">respx</span>
+      <span class="tag tag-magenta">pytest-httpx</span>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 23: TESTING
+     22 tests across 6 test files
+     ============================================================ -->
+<section class="slide" id="slide-23">
+  <div class="slide-content" style="max-width: 800px; margin: 0 auto;">
+    <h2 class="reveal">Testing <span class="neon-magenta">.</span></h2>
+    <div class="reveal reveal-delay-1" style="display: flex; gap: var(--content-gap); flex-wrap: wrap; justify-content: center; margin-bottom: var(--content-gap);">
+      <div class="cyber-card" style="text-align: center; min-width: 120px;">
+        <span class="stat-num pulse">22</span>
+        <span class="stat-label">tests</span>
+      </div>
+      <div class="cyber-card" style="text-align: center; min-width: 120px;">
+        <span class="stat-num neon-magenta" style="animation: pulse-glow 2.5s ease-in-out infinite;">6</span>
+        <span class="stat-label">test files</span>
+      </div>
+      <div class="cyber-card" style="text-align: center; min-width: 120px;">
+        <span class="stat-num pulse">100%</span>
+        <span class="stat-label">async</span>
+      </div>
+    </div>
+    <div class="grid reveal reveal-delay-2" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));">
+      <div class="cyber-card">
+        <h3 class="neon-cyan">test_config</h3>
+        <p>Settings loading, env file parsing, defaults</p>
+      </div>
+      <div class="cyber-card">
+        <h3 class="neon-cyan">test_vllm_client</h3>
+        <p>Generate, stream, model listing, health checks</p>
+      </div>
+      <div class="cyber-card">
+        <h3 class="neon-cyan">test_reddit_context</h3>
+        <p>Thread fetching, comment parsing, subreddit sampling</p>
+      </div>
+      <div class="cyber-card">
+        <h3 class="neon-cyan">test_tone_analyzer</h3>
+        <p>Culture profiling, formality scoring, edge cases</p>
+      </div>
+      <div class="cyber-card">
+        <h3 class="neon-cyan">test_prompt_engine</h3>
+        <p>Prompt building, angle rotation, context formatting</p>
+      </div>
+      <div class="cyber-card">
+        <h3 class="neon-cyan">test_generate</h3>
+        <p>Full integration: request -> SSE draft stream</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 24: GETTING STARTED
+     3-step quickstart
+     ============================================================ -->
+<section class="slide slide-alt grid-bg" id="slide-24">
+  <div class="slide-content" style="max-width: 800px; margin: 0 auto;">
+    <h2 class="reveal">Getting Started <span class="neon-cyan">.</span></h2>
+    <div class="reveal reveal-delay-1" style="display: flex; flex-direction: column; gap: var(--content-gap);">
+      <div class="cyber-card" style="display: flex; align-items: flex-start; gap: 1rem;">
+        <span class="stat-num" style="font-size: clamp(1.2rem, 3vw, 2rem); min-width: 1.5em; text-align: center;">1</span>
+        <div>
+          <h3>Install the Backend</h3>
+          <div class="code-block" style="margin-top: 0.4em;">cd backend && pip install -e <span class="str">".[dev]"</span>
+cp .env.example .env
+uvicorn app.main:app --reload</div>
+        </div>
+      </div>
+      <div class="cyber-card" style="display: flex; align-items: flex-start; gap: 1rem;">
+        <span class="stat-num" style="font-size: clamp(1.2rem, 3vw, 2rem); min-width: 1.5em; text-align: center;">2</span>
+        <div>
+          <h3>Load the Extension</h3>
+          <p style="color: var(--text-secondary);">Open <span class="tag">chrome://extensions</span> &rarr; Enable Developer Mode &rarr; Load Unpacked &rarr; Select the <span class="tag">extension/</span> directory</p>
+        </div>
+      </div>
+      <div class="cyber-card" style="display: flex; align-items: flex-start; gap: 1rem;">
+        <span class="stat-num" style="font-size: clamp(1.2rem, 3vw, 2rem); min-width: 1.5em; text-align: center;">3</span>
+        <div>
+          <h3>Generate Replies</h3>
+          <p style="color: var(--text-secondary);">Navigate to any Reddit thread &rarr; Click the extension icon &rarr; Scan &rarr; Generate &rarr; Select a draft &rarr; Type It</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SLIDE 25: OPEN SOURCE
+     MIT license, GitHub, contribute, star
+     ============================================================ -->
+<section class="slide" id="slide-25">
+  <div class="slide-content" style="max-width: 700px; margin: 0 auto; text-align: center;">
+    <h2 class="reveal" style="font-size: var(--title-size);">Open Source <span class="neon-cyan">.</span></h2>
+    <p class="reveal reveal-delay-1" style="color: var(--text-secondary); margin-bottom: var(--content-gap);">
+      MIT Licensed. Free to use, modify, and distribute.
+    </p>
+    <div class="reveal reveal-delay-2" style="display: flex; flex-wrap: wrap; gap: var(--element-gap); justify-content: center; margin-bottom: var(--content-gap);">
+      <span class="tag" style="font-size: var(--body-size); padding: 0.4em 1em;">MIT License</span>
+      <span class="tag tag-magenta" style="font-size: var(--body-size); padding: 0.4em 1em;">Python 3.12</span>
+      <span class="tag" style="font-size: var(--body-size); padding: 0.4em 1em;">Chrome MV3</span>
+    </div>
+    <div class="reveal reveal-delay-3" style="margin-bottom: var(--content-gap);">
+      <div class="code-block" style="display: inline-block; text-align: left;">git clone https://github.com/jasperan/OpenRedditKarmaBot.git
+cd OpenRedditKarmaBot
+pip install -e <span class="str">"backend/.[dev]"</span></div>
+    </div>
+    <ul class="bullet-list reveal reveal-delay-4" style="text-align: left; display: inline-flex; flex-direction: column;">
+      <li><strong>Star the repo</strong> if this saves you time</li>
+      <li><strong>PRs welcome</strong> for new angles, typing models, and UI improvements</li>
+      <li><strong>Issues open</strong> for bugs, feature requests, and ideas</li>
+    </ul>
+    <p class="reveal reveal-delay-5 neon-cyan" style="margin-top: var(--content-gap); font-family: 'Clash Display', sans-serif; font-size: var(--h3-size); font-weight: 600;">
+      github.com/jasperan/OpenRedditKarmaBot
+    </p>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     JAVASCRIPT: SlidePresentation class
+     Handles keyboard nav, touch/swipe, IntersectionObserver,
+     progress bar, nav dots, and particle canvas.
+     ============================================================ -->
+<script>
+(function() {
+  'use strict';
+
+  /* ============================================================
+     SlidePresentation Class
+     Central controller for all presentation interactions.
+     ============================================================ */
+  class SlidePresentation {
+    constructor() {
+      this.slides = Array.from(document.querySelectorAll('.slide'));
+      this.totalSlides = this.slides.length;
+      this.currentSlide = 0;
+      this.isScrolling = false;
+      this.scrollTimeout = null;
+
+      // Touch/swipe state
+      this.touchStartY = 0;
+      this.touchStartX = 0;
+      this.touchStartTime = 0;
+
+      this.init();
+    }
+
+    /* ----------------------------------------------------------
+       Initialization: set up all event listeners and observers
+       ---------------------------------------------------------- */
+    init() {
+      this.createNavDots();
+      this.setupIntersectionObserver();
+      this.setupKeyboardNav();
+      this.setupTouchNav();
+      this.setupScrollTracking();
+      this.initParticleCanvas();
+      this.updateUI(0);
+    }
+
+    /* ----------------------------------------------------------
+       Navigation Dots: one dot per slide, clickable
+       ---------------------------------------------------------- */
+    createNavDots() {
+      const container = document.getElementById('nav-dots');
+      this.slides.forEach((_, i) => {
+        const dot = document.createElement('button');
+        dot.classList.add('nav-dot');
+        dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
+        dot.addEventListener('click', () => this.goToSlide(i));
+        container.appendChild(dot);
+      });
+      this.dots = Array.from(container.querySelectorAll('.nav-dot'));
+    }
+
+    /* ----------------------------------------------------------
+       Intersection Observer: triggers .visible class for
+       CSS reveal animations when a slide enters the viewport.
+       ---------------------------------------------------------- */
+    setupIntersectionObserver() {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            // Mark the slide index as current
+            const index = this.slides.indexOf(entry.target);
+            if (index !== -1) {
+              this.currentSlide = index;
+              this.updateUI(index);
+            }
+            // Trigger reveal animations on all .reveal children
+            const reveals = entry.target.querySelectorAll('.reveal');
+            reveals.forEach(el => el.classList.add('visible'));
+          }
+        });
+      }, {
+        threshold: 0.5
+      });
+
+      this.slides.forEach(slide => observer.observe(slide));
+    }
+
+    /* ----------------------------------------------------------
+       Keyboard Navigation:
+       ArrowDown, ArrowRight, Space, PageDown = next slide
+       ArrowUp, ArrowLeft, PageUp = previous slide
+       Home = first slide, End = last slide
+       ---------------------------------------------------------- */
+    setupKeyboardNav() {
+      document.addEventListener('keydown', (e) => {
+        switch(e.key) {
+          case 'ArrowDown':
+          case 'ArrowRight':
+          case ' ':
+          case 'PageDown':
+            e.preventDefault();
+            this.nextSlide();
+            break;
+          case 'ArrowUp':
+          case 'ArrowLeft':
+          case 'PageUp':
+            e.preventDefault();
+            this.prevSlide();
+            break;
+          case 'Home':
+            e.preventDefault();
+            this.goToSlide(0);
+            break;
+          case 'End':
+            e.preventDefault();
+            this.goToSlide(this.totalSlides - 1);
+            break;
+        }
+      });
+    }
+
+    /* ----------------------------------------------------------
+       Touch / Swipe Navigation:
+       Vertical swipe with minimum 50px distance and velocity
+       threshold to distinguish swipes from taps.
+       ---------------------------------------------------------- */
+    setupTouchNav() {
+      document.addEventListener('touchstart', (e) => {
+        this.touchStartY = e.touches[0].clientY;
+        this.touchStartX = e.touches[0].clientX;
+        this.touchStartTime = Date.now();
+      }, { passive: true });
+
+      document.addEventListener('touchend', (e) => {
+        const deltaY = this.touchStartY - e.changedTouches[0].clientY;
+        const deltaX = this.touchStartX - e.changedTouches[0].clientX;
+        const elapsed = Date.now() - this.touchStartTime;
+
+        // Only process if vertical swipe is dominant and meets thresholds
+        if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 50 && elapsed < 500) {
+          if (deltaY > 0) {
+            this.nextSlide();
+          } else {
+            this.prevSlide();
+          }
+        }
+      }, { passive: true });
+    }
+
+    /* ----------------------------------------------------------
+       Scroll Tracking: updates progress bar on native scroll
+       ---------------------------------------------------------- */
+    setupScrollTracking() {
+      document.addEventListener('scroll', () => {
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+        document.getElementById('progress-bar').style.width = progress + '%';
+      }, { passive: true });
+    }
+
+    /* ----------------------------------------------------------
+       Slide Navigation Methods
+       ---------------------------------------------------------- */
+    nextSlide() {
+      if (this.currentSlide < this.totalSlides - 1) {
+        this.goToSlide(this.currentSlide + 1);
+      }
+    }
+
+    prevSlide() {
+      if (this.currentSlide > 0) {
+        this.goToSlide(this.currentSlide - 1);
+      }
+    }
+
+    goToSlide(index) {
+      if (index >= 0 && index < this.totalSlides) {
+        this.slides[index].scrollIntoView({ behavior: 'smooth' });
+        this.currentSlide = index;
+        this.updateUI(index);
+      }
+    }
+
+    /* ----------------------------------------------------------
+       UI Update: sync dots, counter, and progress bar
+       ---------------------------------------------------------- */
+    updateUI(index) {
+      // Update nav dots
+      this.dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === index);
+      });
+
+      // Update slide counter
+      document.getElementById('slide-counter').textContent =
+        `${index + 1} / ${this.totalSlides}`;
+
+      // Update progress bar
+      const progress = this.totalSlides > 1
+        ? (index / (this.totalSlides - 1)) * 100
+        : 0;
+      document.getElementById('progress-bar').style.width = progress + '%';
+    }
+
+    /* ----------------------------------------------------------
+       Particle Canvas System
+       Subtle floating particles in cyan and magenta.
+       Uses requestAnimationFrame for smooth animation.
+       ---------------------------------------------------------- */
+    initParticleCanvas() {
+      const canvas = document.getElementById('particle-canvas');
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+      let animationId;
+
+      // Resize canvas to fill viewport
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      // Particle constructor
+      class Particle {
+        constructor() {
+          this.reset();
+        }
+        reset() {
+          this.x = Math.random() * canvas.width;
+          this.y = Math.random() * canvas.height;
+          this.size = Math.random() * 2 + 0.5;
+          this.speedX = (Math.random() - 0.5) * 0.3;
+          this.speedY = (Math.random() - 0.5) * 0.3;
+          this.opacity = Math.random() * 0.4 + 0.1;
+          // Randomly cyan or magenta
+          this.color = Math.random() > 0.5
+            ? `rgba(0, 255, 204, ${this.opacity})`
+            : `rgba(255, 0, 170, ${this.opacity * 0.6})`;
+          this.life = Math.random() * 300 + 200;
+          this.maxLife = this.life;
+        }
+        update() {
+          this.x += this.speedX;
+          this.y += this.speedY;
+          this.life--;
+          if (this.life <= 0 || this.x < -10 || this.x > canvas.width + 10 ||
+              this.y < -10 || this.y > canvas.height + 10) {
+            this.reset();
+          }
+        }
+        draw() {
+          const fade = Math.min(1, this.life / (this.maxLife * 0.2));
+          ctx.globalAlpha = fade;
+          ctx.fillStyle = this.color;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Create particle pool (scaled to viewport)
+      const count = Math.min(80, Math.floor((canvas.width * canvas.height) / 15000));
+      for (let i = 0; i < count; i++) {
+        particles.push(new Particle());
+      }
+
+      // Animation loop
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+          p.update();
+          p.draw();
+        });
+        ctx.globalAlpha = 1;
+
+        // Draw faint connection lines between nearby particles
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 120) {
+              ctx.strokeStyle = `rgba(0, 255, 204, ${0.03 * (1 - dist / 120)})`;
+              ctx.lineWidth = 0.5;
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.stroke();
+            }
+          }
+        }
+
+        animationId = requestAnimationFrame(animate);
+      }
+      animate();
+
+      // Cleanup on page hide (battery optimization)
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          cancelAnimationFrame(animationId);
+        } else {
+          animate();
+        }
+      });
+    }
+  }
+
+  /* ============================================================
+     Initialize presentation when DOM is ready
+     ============================================================ */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => new SlidePresentation());
+  } else {
+    new SlidePresentation();
+  }
+
+})();
+</script>
+
+</body>
+</html>
