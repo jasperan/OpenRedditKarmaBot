@@ -60,6 +60,8 @@ async function saveSettings() {
     typoSimulation: document.getElementById("typo-simulation").checked,
     tone: document.getElementById("tone-select").value,
     draftCount: parseInt(document.getElementById("draft-count").value, 10),
+    temperature: settings.temperature || 0.8,
+    maxTokens: settings.maxTokens || 300,
   };
 
   await new Promise((resolve) => {
