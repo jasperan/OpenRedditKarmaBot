@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+*.egg
+
+# Environment
+.env
+backend/.env
+
+# IDE
+.vscode/
+.idea/
+
+# Agent/skill dirs
+.agents/
+.claude/
+.crush/
+.openhands/
+.serena/
+
+# Plan artifacts
+docs/plans/
+task_plan.md
+findings.md
+progress.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
