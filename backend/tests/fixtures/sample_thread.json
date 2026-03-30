@@ -1,0 +1,67 @@
+[
+    {
+        "kind": "Listing",
+        "data": {
+            "children": [
+                {
+                    "kind": "t3",
+                    "data": {
+                        "title": "How I grew my startup to $10k MRR",
+                        "selftext": "Here's my journey from zero to $10k monthly revenue...",
+                        "subreddit": "Entrepreneur",
+                        "author": "startup_guy",
+                        "score": 342,
+                        "link_flair_text": "Case Study",
+                        "num_comments": 87
+                    }
+                }
+            ]
+        }
+    },
+    {
+        "kind": "Listing",
+        "data": {
+            "children": [
+                {
+                    "kind": "t1",
+                    "data": {
+                        "author": "helpful_commenter",
+                        "body": "This is inspiring! What was your biggest challenge?",
+                        "score": 45,
+                        "depth": 0,
+                        "created_utc": 1711756800,
+                        "replies": {
+                            "kind": "Listing",
+                            "data": {
+                                "children": [
+                                    {
+                                        "kind": "t1",
+                                        "data": {
+                                            "author": "startup_guy",
+                                            "body": "Honestly, customer acquisition was brutal.",
+                                            "score": 28,
+                                            "depth": 1,
+                                            "created_utc": 1711760400,
+                                            "replies": ""
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                {
+                    "kind": "t1",
+                    "data": {
+                        "author": "skeptic_dave",
+                        "body": "What's your tech stack?",
+                        "score": 12,
+                        "depth": 0,
+                        "created_utc": 1711764000,
+                        "replies": ""
+                    }
+                }
+            ]
+        }
+    }
+]
