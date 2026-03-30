@@ -1,0 +1,27 @@
+{
+  "name": "openredditkarmabot-video",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "scripts": {
+    "preview": "remotion preview src/index.ts",
+    "build": "remotion render src/index.ts OpenRedditKarmaBot out/video.mp4",
+    "upgrade": "remotion upgrade"
+  },
+  "keywords": [],
+  "author": "jasperan",
+  "license": "MIT",
+  "description": "Remotion video project showcasing OpenRedditKarmaBot",
+  "dependencies": {
+    "@remotion/cli": "^4.0.441",
+    "@remotion/google-fonts": "^4.0.441",
+    "@remotion/transitions": "^4.0.441",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "remotion": "^4.0.441"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.2"
+  }
+}
