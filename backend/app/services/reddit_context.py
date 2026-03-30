@@ -1,6 +1,11 @@
 from dataclasses import dataclass, field
+import re
 
 import httpx
+
+_REDDIT_URL_RE = re.compile(
+    r"^https://(www\.|old\.)?reddit\.com/r/"
+)
 
 
 @dataclass
@@ -34,6 +39,10 @@ class RedditContextService:
         self.headers = {"User-Agent": user_agent}
 
     async def fetch_thread(self, url: str) -> RedditThread:
+        if not _REDDIT_URL_RE.match(url):
+            raise ValueError(
+                f"URL must be a reddit.com thread link: {url}"
+            )
         json_url = url.rstrip("/") + ".json"
         async with httpx.AsyncClient() as http:
             resp = await http.get(

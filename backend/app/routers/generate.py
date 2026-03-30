@@ -1,5 +1,6 @@
 import json
 
+import httpx
 from fastapi import APIRouter
 from sse_starlette.sse import EventSourceResponse
 
@@ -67,12 +68,19 @@ async def generate(req: GenerateRequest):
     async def event_stream():
         for i, (system_prompt, user_prompt) in enumerate(prompts):
             angle_name = ANGLES[i % len(ANGLES)]["name"]
-            text = await client.generate(
-                system_prompt=system_prompt,
-                user_prompt=user_prompt,
-                temperature=req.temperature,
-                max_tokens=req.max_tokens,
-            )
+            try:
+                text = await client.generate(
+                    system_prompt=system_prompt,
+                    user_prompt=user_prompt,
+                    temperature=req.temperature,
+                    max_tokens=req.max_tokens,
+                )
+            except httpx.HTTPStatusError as e:
+                yield {"event": "error", "data": json.dumps({"error": str(e)})}
+                return
+            except Exception as e:
+                yield {"event": "error", "data": json.dumps({"error": str(e)})}
+                return
             yield {
                 "event": "draft",
                 "data": json.dumps(

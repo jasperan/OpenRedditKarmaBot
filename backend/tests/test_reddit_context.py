@@ -49,6 +49,12 @@ async def test_parse_comment_tree(service, sample_thread_json):
     assert top_level[0].score == 45
 
 
+@pytest.mark.asyncio
+async def test_fetch_thread_rejects_non_reddit_url(service):
+    with pytest.raises(ValueError, match="URL must be a reddit.com thread link"):
+        await service.fetch_thread("https://evil.com/r/something")
+
+
 @respx.mock
 @pytest.mark.asyncio
 async def test_sample_subreddit(service):
