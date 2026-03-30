@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenRedditKarmaBot</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>OpenRedditKarmaBot</h1>
+      <button id="settings-btn" title="Settings">&#9881;</button>
+    </header>
+
+    <div id="main-view">
+      <div id="thread-info" class="card">
+        <div id="subreddit-badge"></div>
+        <div id="post-title">Click "Scan" to read the current thread</div>
+      </div>
+
+      <div class="controls">
+        <button id="scan-btn" class="btn primary">Scan Thread</button>
+
+        <div class="control-row">
+          <label for="tone-select">Tone</label>
+          <select id="tone-select">
+            <option value="auto">Auto-detect</option>
+            <option value="Professional">Professional</option>
+            <option value="Casual">Casual</option>
+            <option value="Concise">Concise</option>
+            <option value="Meme-heavy">Meme-heavy</option>
+          </select>
+        </div>
+
+        <div class="control-row">
+          <label for="draft-count">Drafts: <span id="draft-count-display">3</span></label>
+          <input type="range" id="draft-count" min="1" max="5" value="3">
+        </div>
+
+        <button id="generate-btn" class="btn primary" disabled>Generate Replies</button>
+      </div>
+
+      <div id="drafts-container" class="hidden">
+        <h2>Drafts</h2>
+        <div id="drafts-list"></div>
+      </div>
+
+      <div id="action-buttons" class="hidden">
+        <button id="type-btn" class="btn accent" disabled>Type It</button>
+        <button id="regenerate-btn" class="btn secondary">Regenerate</button>
+      </div>
+
+      <div id="status" class="hidden"></div>
+    </div>
+
+    <div id="settings-view" class="hidden">
+      <h2>Settings</h2>
+
+      <div class="setting-group">
+        <label for="backend-url">Backend URL</label>
+        <input type="url" id="backend-url" placeholder="http://localhost:8000">
+      </div>
+
+      <div class="setting-group">
+        <label for="api-key">API Key (optional)</label>
+        <input type="password" id="api-key" placeholder="Leave empty for no auth">
+      </div>
+
+      <div class="setting-group">
+        <label for="wpm">Typing Speed (WPM)</label>
+        <input type="number" id="wpm" min="30" max="200" value="85">
+      </div>
+
+      <div class="setting-group">
+        <label>
+          <input type="checkbox" id="auto-submit"> Auto-submit after typing
+        </label>
+      </div>
+
+      <div class="setting-group">
+        <label>
+          <input type="checkbox" id="typo-simulation"> Enable typo simulation
+        </label>
+      </div>
+
+      <div class="buttons-row">
+        <button id="save-settings-btn" class="btn primary">Save</button>
+        <button id="back-btn" class="btn secondary">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
