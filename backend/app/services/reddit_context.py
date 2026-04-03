@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 import re
-from typing import Any
 
 import httpx
 
