@@ -30,7 +30,7 @@ async def demo_thread():
     button { margin-top: 12px; border: none; border-radius: 999px; background: #d93900; color: white; padding: 10px 18px; font-weight: 700; }
   </style>
 </head>
-<body>
+<body data-orb-subreddit="SideProject">
   <div class=\"page\">
     <div class=\"banner\">
       <strong>Local demo page.</strong> This thread is served by the backend so you can test the extension without Reddit or an external LLM.
@@ -62,7 +62,28 @@ async def demo_thread():
       <div id=\"demo-composer\" contenteditable=\"true\" data-placeholder=\"Write a comment\"></div>
       <button type=\"submit\">Comment</button>
     </form>
+
+    <section class=\"post\">
+      <div class=\"meta\">Submitted demo replies</div>
+      <ul id=\"demo-submitted-replies\"></ul>
+    </section>
   </div>
+
+  <script>
+    const form = document.querySelector('[data-testid=\"comment-composer\"]');
+    const composer = document.getElementById('demo-composer');
+    const replies = document.getElementById('demo-submitted-replies');
+
+    form?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const text = composer?.textContent?.trim();
+      if (!text) return;
+      const item = document.createElement('li');
+      item.textContent = text;
+      replies?.prepend(item);
+      composer.textContent = '';
+    });
+  </script>
 </body>
 </html>
 """

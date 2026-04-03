@@ -2,6 +2,7 @@ let settings = {};
 let scannedContext = null;
 let selectedDraftIndex = null;
 let drafts = [];
+let generationMeta = null;
 const popupParams = new URLSearchParams(window.location.search);
 const tabTarget = {
   tabUrl: popupParams.get("tabUrl") || undefined,
@@ -104,7 +105,9 @@ async function scanThread() {
     return;
   }
 
-  document.getElementById("subreddit-badge").textContent = "r/" + scannedContext.subreddit;
+  document.getElementById("subreddit-badge").textContent = scannedContext.subreddit
+    ? "r/" + scannedContext.subreddit
+    : "Local thread";
   document.getElementById("post-title").textContent = scannedContext.post_title;
   document.getElementById("generate-btn").disabled = false;
   showStatus("Found " + (scannedContext.comments?.length || 0) + " comments", "success");
@@ -125,6 +128,7 @@ async function generateReplies() {
   document.getElementById("action-buttons").classList.add("hidden");
   drafts = [];
   selectedDraftIndex = null;
+  generationMeta = null;
 
   try {
     const response = await fetch(getConfiguredBackendUrl() + "/api/generate", {
@@ -165,12 +169,7 @@ async function generateReplies() {
           throw new Error(data.error || "Generation failed");
         }
         if (event === "meta") {
-          const summary = [
-            "Context: " + (data.context_source || "unknown"),
-            "Tone: " + (data.tone_source || "unknown"),
-            "Model: " + (data.model || "default"),
-          ].join(" • ");
-          document.getElementById("backend-models-summary").textContent = summary;
+          generationMeta = data;
           continue;
         }
         if (event === "draft" && data.text) {
@@ -181,7 +180,10 @@ async function generateReplies() {
     }
 
     if (drafts.length > 0) {
-      showStatus("Generated " + drafts.length + " drafts", "success");
+      const detail = generationMeta
+        ? " via " + (generationMeta.model || "default") + " • " + (generationMeta.context_source || "unknown")
+        : "";
+      showStatus("Generated " + drafts.length + " drafts" + detail, "success");
     } else {
       showStatus("No drafts generated. Check backend connection.", "error");
     }
@@ -290,6 +292,7 @@ async function refreshBackendStatus(options = {}) {
     const health = await healthResponse.json();
     const modelData = await modelsResponse.json();
     const models = Array.isArray(modelData.models) ? modelData.models : [];
+    populateModelOptions(models);
 
     summary.textContent = health.vllm_connected
       ? "Connected to backend + remote model endpoint"
@@ -333,6 +336,17 @@ function buildBackendHeaders(options = {}) {
     headers["X-Model-Api-Key"] = apiKey;
   }
   return headers;
+}
+
+function populateModelOptions(models) {
+  const datalist = document.getElementById("model-options");
+  if (!datalist) return;
+  datalist.innerHTML = "";
+  models.forEach((model) => {
+    const option = document.createElement("option");
+    option.value = model;
+    datalist.appendChild(option);
+  });
 }
 
 function showStatus(message, type) {
