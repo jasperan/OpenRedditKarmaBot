@@ -112,3 +112,79 @@ def test_generate_endpoint_returns_sse(client):
             },
         )
         assert resp.status_code == 200
+
+
+def test_generate_endpoint_uses_inline_context_without_reddit_fetch(client):
+    with respx.mock:
+        respx.post("http://localhost:8000/v1/chat/completions").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "choices": [
+                        {
+                            "message": {"content": "Inline reply works."},
+                            "finish_reason": "stop",
+                        }
+                    ]
+                },
+            )
+        )
+
+        resp = client.post(
+            "/api/generate",
+            json={
+                "context": {
+                    "url": "https://invalid.local/thread",
+                    "post_title": "Inline Test Post",
+                    "post_body": "Inline body",
+                    "subreddit": "localdemo",
+                    "comments": [{"author": "demo", "body": "Inline comment", "depth": 0}],
+                },
+                "context_mode": "inline",
+                "tone": "Casual",
+                "draft_count": 1,
+            },
+        )
+
+        assert resp.status_code == 200
+        assert '"context_source": "inline"' in resp.text
+        assert "Inline reply works." in resp.text
+
+
+def test_generate_endpoint_falls_back_to_inline_tone_when_sampling_fails(client):
+    with respx.mock:
+        respx.get("https://www.reddit.com/r/localdemo/hot.json").mock(
+            return_value=httpx.Response(503)
+        )
+        respx.post("http://localhost:8000/v1/chat/completions").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "choices": [
+                        {
+                            "message": {"content": "Fallback tone works."},
+                            "finish_reason": "stop",
+                        }
+                    ]
+                },
+            )
+        )
+
+        resp = client.post(
+            "/api/generate",
+            json={
+                "context": {
+                    "url": "https://invalid.local/thread",
+                    "post_title": "Inline Test Post",
+                    "post_body": "Inline body",
+                    "subreddit": "localdemo",
+                    "comments": [{"author": "demo", "body": "ngl this local test slaps 😂", "depth": 0}],
+                },
+                "context_mode": "inline",
+                "draft_count": 1,
+            },
+        )
+
+        assert resp.status_code == 200
+        assert '"tone_source": "inline_context"' in resp.text
+        assert "Fallback tone works." in resp.text

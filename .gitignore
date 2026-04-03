@@ -22,12 +22,17 @@ backend/.env
 .crush/
 .openhands/
 .serena/
+.omx/
 
 # Plan artifacts
 docs/plans/
 task_plan.md
 findings.md
 progress.md
+IMPLEMENTATION.md
+implementation.md
+*_IMPLEMENTATION.md
+*_implementation.md
 
 # OS
 .DS_Store

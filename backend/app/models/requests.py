@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from typing import Literal
 
 
 class ThreadContext(BaseModel):
@@ -16,6 +17,7 @@ class ThreadContext(BaseModel):
 class GenerateRequest(BaseModel):
     context: ThreadContext
     tone: str = "auto"  # "auto", "Professional", "Casual", "Concise", "Meme-heavy"
+    context_mode: Literal["auto", "inline", "live"] = "auto"
     draft_count: int = Field(default=3, ge=1, le=5)
     temperature: float = Field(default=0.8, ge=0.0, le=2.0)
     max_tokens: int = Field(default=300, ge=50, le=1000)

@@ -17,20 +17,40 @@ from app.services.vllm_client import VLLMClient
 router = APIRouter(prefix="/api")
 
 
+def _resolve_thread_source(req: GenerateRequest, reddit: RedditContextService) -> str:
+    if req.context_mode == "inline":
+        return "inline"
+    if req.context_mode == "live":
+        return "live"
+    return "inline" if reddit.has_inline_context(req.context) else "live"
+
+
 @router.post("/generate")
 async def generate(req: GenerateRequest):
     reddit = RedditContextService(user_agent=settings.REDDIT_USER_AGENT)
 
-    # Fetch full thread from Reddit API
-    thread = await reddit.fetch_thread(req.context.url)
+    context_source = _resolve_thread_source(req, reddit)
+    if context_source == "inline":
+        thread = reddit.build_thread_from_context(req.context)
+    else:
+        thread = await reddit.fetch_thread(req.context.url)
 
     # Analyze tone
+    tone_source = "manual"
     if req.tone == "auto":
-        posts = await reddit.sample_subreddit(thread.post.subreddit, limit=10)
-        sample_texts = [p["selftext"] for p in posts if p["selftext"]]
-        comment_texts = [c.body for c in thread.comments[:10]]
+        inline_texts = [thread.post.selftext] + [c.body for c in thread.comments[:10]]
+        sample_texts = []
+        tone_source = "inline_context"
+        if thread.post.subreddit and thread.post.subreddit != "unknown":
+            try:
+                posts = await reddit.sample_subreddit(thread.post.subreddit, limit=10)
+                sample_texts = [p["selftext"] for p in posts if p["selftext"]]
+                if sample_texts:
+                    tone_source = "subreddit_sample"
+            except httpx.HTTPError:
+                sample_texts = []
         analyzer = ToneAnalyzer()
-        culture_profile = analyzer.analyze(sample_texts + comment_texts)
+        culture_profile = analyzer.analyze(sample_texts + inline_texts)
     else:
         analyzer = ToneAnalyzer()
         culture_profile = analyzer.analyze([])
@@ -66,6 +86,16 @@ async def generate(req: GenerateRequest):
     )
 
     async def event_stream():
+        yield {
+            "event": "meta",
+            "data": json.dumps(
+                {
+                    "context_source": context_source,
+                    "tone_source": tone_source,
+                    "model": model,
+                }
+            ),
+        }
         for i, (system_prompt, user_prompt) in enumerate(prompts):
             angle_name = ANGLES[i % len(ANGLES)]["name"]
             try:
