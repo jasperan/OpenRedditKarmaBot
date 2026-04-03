@@ -79,6 +79,7 @@ const CommentInjector = {
     await TypingEngine.typeText(replyBox, text, {
       wpm: options.wpm || 85,
       typoSimulation: options.typoSimulation || false,
+      fastMode: options.fastMode || false,
     });
 
     if (options.autoSubmit) {

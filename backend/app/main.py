@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import generate, tone, settings
+from app.routers import demo, generate, settings, tone
 
 app = FastAPI(
     title="OpenRedditKarmaBot",
@@ -20,3 +20,4 @@ app.add_middleware(
 app.include_router(generate.router)
 app.include_router(tone.router)
 app.include_router(settings.router)
+app.include_router(demo.router)

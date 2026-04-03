@@ -23,7 +23,21 @@ const RedditScanner = {
     };
 
     const subMatch = window.location.pathname.match(/\/r\/([^/]+)/);
-    if (subMatch) result.subreddit = subMatch[1];
+    if (subMatch) {
+      result.subreddit = subMatch[1];
+    } else {
+      const subredditLink =
+        document.querySelector('a[href^="/r/"]') ||
+        document.querySelector('a[href*="reddit.com/r/"]');
+      const href = subredditLink ? subredditLink.getAttribute("href") || "" : "";
+      const linkMatch = href.match(/\/r\/([^/]+)/);
+      result.subreddit =
+        linkMatch?.[1] ||
+        document.body?.dataset?.orbSubreddit ||
+        document.querySelector("[data-orb-subreddit]")?.getAttribute("data-orb-subreddit") ||
+        document.querySelector('meta[name="orb-subreddit"]')?.getAttribute("content") ||
+        "";
+    }
 
     const titleEl =
       document.querySelector('[data-testid="post-title"]') ||
@@ -88,7 +102,16 @@ const RedditScanner = {
     };
 
     const subMatch = window.location.pathname.match(/\/r\/([^/]+)/);
-    if (subMatch) result.subreddit = subMatch[1];
+    if (subMatch) {
+      result.subreddit = subMatch[1];
+    } else {
+      const subredditLink = document.querySelector('a.subreddit, a[href^="/r/"]');
+      const href = subredditLink ? subredditLink.getAttribute("href") || "" : "";
+      const linkMatch = href.match(/\/r\/([^/]+)/);
+      if (linkMatch) {
+        result.subreddit = linkMatch[1];
+      }
+    }
 
     const titleEl = document.querySelector("a.title");
     if (titleEl) result.post_title = titleEl.textContent.trim();

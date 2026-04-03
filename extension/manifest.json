@@ -4,7 +4,11 @@
   "version": "0.1.0",
   "description": "AI-powered Reddit comment generator with biometric typing simulation",
   "permissions": ["activeTab", "storage"],
-  "host_permissions": ["*://*.reddit.com/*"],
+  "host_permissions": [
+    "*://*.reddit.com/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
   "action": {
     "default_popup": "popup/popup.html",
     "default_icon": {
@@ -18,7 +22,11 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://*.reddit.com/*"],
+      "matches": [
+        "*://*.reddit.com/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ],
       "js": [
         "utils/bigram_timings.js",
         "content/scanner.js",

@@ -2,11 +2,19 @@ let settings = {};
 let scannedContext = null;
 let selectedDraftIndex = null;
 let drafts = [];
+const popupParams = new URLSearchParams(window.location.search);
+const tabTarget = {
+  tabUrl: popupParams.get("tabUrl") || undefined,
+  tabId: popupParams.get("tabId") ? Number(popupParams.get("tabId")) : undefined,
+};
+
+const DEFAULT_BACKEND_URL = "http://localhost:8000";
 
 document.addEventListener("DOMContentLoaded", async () => {
   settings = await getSettings();
   applySettings();
   bindEvents();
+  await refreshBackendStatus();
 });
 
 async function getSettings() {
@@ -18,9 +26,12 @@ async function getSettings() {
 }
 
 function applySettings() {
-  document.getElementById("backend-url").value = settings.backendUrl || "http://localhost:8000";
+  document.getElementById("backend-url").value = settings.backendUrl || DEFAULT_BACKEND_URL;
+  document.getElementById("model").value = settings.model || "";
   document.getElementById("api-key").value = settings.apiKey || "";
   document.getElementById("wpm").value = settings.wpm || 85;
+  document.getElementById("temperature").value = settings.temperature || 0.8;
+  document.getElementById("max-tokens").value = settings.maxTokens || 300;
   document.getElementById("auto-submit").checked = settings.autoSubmit || false;
   document.getElementById("typo-simulation").checked = settings.typoSimulation || false;
   document.getElementById("tone-select").value = settings.tone || "auto";
@@ -32,6 +43,7 @@ function bindEvents() {
   document.getElementById("settings-btn").addEventListener("click", showSettings);
   document.getElementById("back-btn").addEventListener("click", hideSettings);
   document.getElementById("save-settings-btn").addEventListener("click", saveSettings);
+  document.getElementById("check-backend-btn").addEventListener("click", () => refreshBackendStatus({ announce: true }));
   document.getElementById("scan-btn").addEventListener("click", scanThread);
   document.getElementById("generate-btn").addEventListener("click", generateReplies);
   document.getElementById("type-btn").addEventListener("click", typeSelectedDraft);
@@ -53,21 +65,23 @@ function hideSettings() {
 
 async function saveSettings() {
   settings = {
-    backendUrl: document.getElementById("backend-url").value.replace(/\/$/, ""),
+    backendUrl: getConfiguredBackendUrl(),
+    model: document.getElementById("model").value.trim(),
     apiKey: document.getElementById("api-key").value,
     wpm: parseInt(document.getElementById("wpm").value, 10),
+    temperature: parseFloat(document.getElementById("temperature").value || "0.8"),
+    maxTokens: parseInt(document.getElementById("max-tokens").value || "300", 10),
     autoSubmit: document.getElementById("auto-submit").checked,
     typoSimulation: document.getElementById("typo-simulation").checked,
     tone: document.getElementById("tone-select").value,
     draftCount: parseInt(document.getElementById("draft-count").value, 10),
-    temperature: settings.temperature || 0.8,
-    maxTokens: settings.maxTokens || 300,
   };
 
   await new Promise((resolve) => {
     chrome.runtime.sendMessage({ type: "SAVE_SETTINGS", settings }, resolve);
   });
 
+  await refreshBackendStatus();
   showStatus("Settings saved", "success");
   setTimeout(hideSettings, 800);
 }
@@ -75,12 +89,17 @@ async function saveSettings() {
 async function scanThread() {
   showStatus("Scanning thread...", "loading");
   scannedContext = await new Promise((resolve) => {
-    chrome.runtime.sendMessage({ type: "SCAN_PAGE" }, (result) => {
+    chrome.runtime.sendMessage({ type: "SCAN_PAGE", ...tabTarget }, (result) => {
       resolve(result);
     });
   });
 
-  if (!scannedContext || !scannedContext.post_title) {
+  if (!scannedContext || scannedContext.error) {
+    showStatus(scannedContext?.error || "No Reddit-compatible page detected.", "error");
+    return;
+  }
+
+  if (!scannedContext.post_title) {
     showStatus("No Reddit thread detected. Navigate to a post first.", "error");
     return;
   }
@@ -88,11 +107,14 @@ async function scanThread() {
   document.getElementById("subreddit-badge").textContent = "r/" + scannedContext.subreddit;
   document.getElementById("post-title").textContent = scannedContext.post_title;
   document.getElementById("generate-btn").disabled = false;
-  showStatus("Found " + scannedContext.comments.length + " comments", "success");
+  showStatus("Found " + (scannedContext.comments?.length || 0) + " comments", "success");
 }
 
 async function generateReplies() {
-  if (!scannedContext) return;
+  if (!scannedContext) {
+    showStatus("Scan a thread first.", "error");
+    return;
+  }
 
   const draftCount = parseInt(document.getElementById("draft-count").value, 10);
   const tone = document.getElementById("tone-select").value;
@@ -105,16 +127,17 @@ async function generateReplies() {
   selectedDraftIndex = null;
 
   try {
-    const backendUrl = settings.backendUrl || "http://localhost:8000";
-    const response = await fetch(backendUrl + "/api/generate", {
+    const response = await fetch(getConfiguredBackendUrl() + "/api/generate", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: buildBackendHeaders({ includeJson: true }),
       body: JSON.stringify({
         context: scannedContext,
-        tone: tone,
+        tone,
+        context_mode: /reddit\.com/.test(scannedContext.url || "") ? "auto" : "inline",
         draft_count: draftCount,
         temperature: settings.temperature || 0.8,
         max_tokens: settings.maxTokens || 300,
+        ...(settings.model ? { model: settings.model } : {}),
       }),
     });
 
@@ -131,22 +154,28 @@ async function generateReplies() {
       if (done) break;
 
       buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop() || "";
+      const events = buffer.split("\n\n");
+      buffer = events.pop() || "";
 
-      for (const line of lines) {
-        if (line.startsWith("data: ")) {
-          const dataStr = line.slice(6).trim();
-          if (!dataStr || dataStr === "{}") continue;
-          try {
-            const data = JSON.parse(dataStr);
-            if (data.text) {
-              drafts.push(data);
-              renderDrafts();
-            }
-          } catch (e) {
-            // skip malformed SSE data
-          }
+      for (const chunk of events) {
+        const parsed = parseSseChunk(chunk);
+        if (!parsed) continue;
+        const { event, data } = parsed;
+        if (event === "error" || data.error) {
+          throw new Error(data.error || "Generation failed");
+        }
+        if (event === "meta") {
+          const summary = [
+            "Context: " + (data.context_source || "unknown"),
+            "Tone: " + (data.tone_source || "unknown"),
+            "Model: " + (data.model || "default"),
+          ].join(" • ");
+          document.getElementById("backend-models-summary").textContent = summary;
+          continue;
+        }
+        if (event === "draft" && data.text) {
+          drafts.push(data);
+          renderDrafts();
         }
       }
     }
@@ -161,6 +190,25 @@ async function generateReplies() {
   }
 
   document.getElementById("generate-btn").disabled = false;
+}
+
+function parseSseChunk(chunk) {
+  const lines = chunk.split("\n").filter(Boolean);
+  if (!lines.length) return null;
+
+  const eventLine = lines.find((line) => line.startsWith("event:"));
+  const dataLine = lines.find((line) => line.startsWith("data:"));
+  if (!dataLine) return null;
+
+  const rawData = dataLine.slice(5).trim();
+  if (!rawData || rawData === "{}") {
+    return { event: eventLine ? eventLine.slice(6).trim() : "message", data: {} };
+  }
+
+  return {
+    event: eventLine ? eventLine.slice(6).trim() : "message",
+    data: JSON.parse(rawData),
+  };
 }
 
 function renderDrafts() {
@@ -197,10 +245,11 @@ async function typeSelectedDraft() {
   chrome.runtime.sendMessage(
     {
       type: "TYPE_REPLY",
-      text: text,
+      text,
       wpm: settings.wpm || 85,
       typoSimulation: settings.typoSimulation || false,
       autoSubmit: settings.autoSubmit || false,
+      ...tabTarget,
     },
     (result) => {
       if (result && result.success !== false) {
@@ -211,6 +260,79 @@ async function typeSelectedDraft() {
       document.getElementById("type-btn").disabled = false;
     }
   );
+}
+
+async function refreshBackendStatus(options = {}) {
+  const summary = document.getElementById("backend-summary");
+  const modelsSummary = document.getElementById("backend-models-summary");
+  const detail = document.getElementById("backend-check-status");
+
+  summary.textContent = "Checking backend...";
+  modelsSummary.textContent = "";
+  if (detail) {
+    detail.textContent = "Checking backend...";
+  }
+
+  try {
+    const baseUrl = getConfiguredBackendUrl();
+    const [healthResponse, modelsResponse] = await Promise.all([
+      fetch(baseUrl + "/api/health", { headers: buildBackendHeaders() }),
+      fetch(baseUrl + "/api/models", { headers: buildBackendHeaders() }),
+    ]);
+
+    if (!healthResponse.ok) {
+      throw new Error("Health check returned " + healthResponse.status);
+    }
+    if (!modelsResponse.ok) {
+      throw new Error("Model list returned " + modelsResponse.status);
+    }
+
+    const health = await healthResponse.json();
+    const modelData = await modelsResponse.json();
+    const models = Array.isArray(modelData.models) ? modelData.models : [];
+
+    summary.textContent = health.vllm_connected
+      ? "Connected to backend + remote model endpoint"
+      : "Backend reachable — remote model unavailable, demo mode still works";
+    modelsSummary.textContent = models.length ? "Models: " + models.join(", ") : "No models reported";
+    if (detail) {
+      detail.textContent = health.vllm_connected
+        ? "Backend healthy. Available models: " + models.join(", ")
+        : "Backend reachable. You can still use demo:local for a full local walkthrough.";
+    }
+
+    if (options.announce) {
+      showStatus("Backend check complete", "success");
+    }
+  } catch (error) {
+    summary.textContent = "Backend check failed";
+    modelsSummary.textContent = "";
+    if (detail) {
+      detail.textContent = error.message;
+    }
+    if (options.announce) {
+      showStatus("Backend check failed: " + error.message, "error");
+    }
+  }
+}
+
+function getConfiguredBackendUrl() {
+  const backendInput = document.getElementById("backend-url");
+  const currentValue = backendInput && backendInput.value ? backendInput.value : settings.backendUrl;
+  return (currentValue || DEFAULT_BACKEND_URL).replace(/\/$/, "");
+}
+
+function buildBackendHeaders(options = {}) {
+  const headers = {};
+  if (options.includeJson) {
+    headers["Content-Type"] = "application/json";
+  }
+  const apiKeyInput = document.getElementById("api-key");
+  const apiKey = apiKeyInput && apiKeyInput.value ? apiKeyInput.value : settings.apiKey;
+  if (apiKey) {
+    headers["X-Model-Api-Key"] = apiKey;
+  }
+  return headers;
 }
 
 function showStatus(message, type) {

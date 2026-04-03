@@ -4,9 +4,7 @@ from typing import Any
 
 import httpx
 
-_REDDIT_URL_RE = re.compile(
-    r"^https://(www\.|old\.)?reddit\.com/r/"
-)
+_REDDIT_URL_RE = re.compile(r"^https://(www\.|old\.)?reddit\.com/r/")
 
 
 @dataclass
@@ -41,9 +39,7 @@ class RedditContextService:
 
     async def fetch_thread(self, url: str) -> RedditThread:
         if not _REDDIT_URL_RE.match(url):
-            raise ValueError(
-                f"URL must be a reddit.com thread link: {url}"
-            )
+            raise ValueError(f"URL must be a reddit.com thread link: {url}")
         json_url = url.rstrip("/") + ".json"
         async with httpx.AsyncClient() as http:
             resp = await http.get(
@@ -72,39 +68,6 @@ class RedditContextService:
 
         return RedditThread(post=post, comments=comments)
 
-    def has_inline_context(self, context: Any) -> bool:
-        title = self._context_value(context, "post_title")
-        subreddit = self._context_value(context, "subreddit")
-        post_body = self._context_value(context, "post_body")
-        comments = self._context_value(context, "comments") or []
-        return bool(title and (subreddit or post_body or comments))
-
-    def build_thread_from_context(self, context: Any) -> RedditThread:
-        comments_data = self._context_value(context, "comments") or []
-        comments = [
-            RedditComment(
-                author=comment.get("author", ""),
-                body=comment.get("body", ""),
-                score=comment.get("score", 0),
-                depth=comment.get("depth", 0),
-                created_utc=comment.get("created_utc", 0),
-            )
-            for comment in comments_data
-            if comment.get("body")
-        ]
-
-        post = RedditPost(
-            title=self._context_value(context, "post_title") or "",
-            selftext=self._context_value(context, "post_body") or "",
-            subreddit=self._context_value(context, "subreddit") or "unknown",
-            author=self._context_value(context, "post_author") or "",
-            score=self._context_value(context, "post_score") or 0,
-            flair=self._context_value(context, "post_flair") or "",
-            num_comments=max(len(comments), 0),
-        )
-
-        return RedditThread(post=post, comments=comments)
-
     def _parse_comments(self, children: list, result: list[RedditComment]):
         for child in children:
             if child["kind"] != "t1":
@@ -120,20 +83,9 @@ class RedditContextService:
                 )
             )
             if isinstance(c.get("replies"), dict):
-                self._parse_comments(
-                    c["replies"]["data"]["children"], result
-                )
+                self._parse_comments(c["replies"]["data"]["children"], result)
 
-    def _context_value(self, context: Any, key: str):
-        if hasattr(context, key):
-            return getattr(context, key)
-        if isinstance(context, dict):
-            return context.get(key)
-        return None
-
-    async def sample_subreddit(
-        self, subreddit: str, limit: int = 10
-    ) -> list[dict]:
+    async def sample_subreddit(self, subreddit: str, limit: int = 10) -> list[dict]:
         url = f"https://www.reddit.com/r/{subreddit}/hot.json"
         async with httpx.AsyncClient() as http:
             resp = await http.get(

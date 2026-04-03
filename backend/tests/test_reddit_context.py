@@ -5,7 +5,9 @@ import httpx
 import pytest
 import respx
 
+from app.models.requests import ThreadContext
 from app.services.reddit_context import RedditContextService
+from app.services.thread_builder import build_thread_from_context
 
 
 @pytest.fixture
@@ -82,3 +84,28 @@ async def test_sample_subreddit(service):
     posts = await service.sample_subreddit("Entrepreneur", limit=5)
     assert len(posts) == 5
     assert posts[0]["title"] == "Post 0"
+
+
+def test_build_thread_from_inline_context():
+    thread, target = build_thread_from_context(
+        ThreadContext(
+            url="http://127.0.0.1:4173/demo/thread.html",
+            post_title="Demo post",
+            post_body="A local walkthrough body.",
+            subreddit="LocalHarness",
+            post_author="demo_author",
+            post_score=42,
+            post_flair="Demo",
+            comments=[
+                {"author": "commenter", "body": "Great idea", "score": 7, "depth": 0},
+                {"author": "ignored", "body": "", "score": 0, "depth": 1},
+            ],
+        )
+    )
+
+    assert thread.post.title == "Demo post"
+    assert thread.post.subreddit == "LocalHarness"
+    assert thread.post.num_comments == 2
+    assert len(thread.comments) == 1
+    assert thread.comments[0].author == "commenter"
+    assert target is None

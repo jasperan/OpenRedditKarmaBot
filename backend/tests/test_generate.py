@@ -45,12 +45,11 @@ def test_models_endpoint(client):
         resp = client.get("/api/models")
         assert resp.status_code == 200
         assert "qwen3.5:27b" in resp.json()["models"]
+        assert "demo:local" in resp.json()["models"]
 
 
 def test_generate_endpoint_returns_sse(client):
     with respx.mock:
-        # Mock the Reddit .json endpoint
-        # fetch_thread strips trailing slash then appends .json
         respx.get("https://www.reddit.com/r/test/comments/abc/test_post.json").mock(
             return_value=httpx.Response(
                 200,
@@ -77,14 +76,12 @@ def test_generate_endpoint_returns_sse(client):
                 ],
             )
         )
-        # Mock subreddit sampling
         respx.get("https://www.reddit.com/r/test/hot.json").mock(
             return_value=httpx.Response(
                 200,
                 json={"data": {"children": []}},
             )
         )
-        # Mock vLLM
         respx.post("http://localhost:8000/v1/chat/completions").mock(
             return_value=httpx.Response(
                 200,
@@ -112,6 +109,37 @@ def test_generate_endpoint_returns_sse(client):
             },
         )
         assert resp.status_code == 200
+        assert '"context_source": "live"' in resp.text
+        assert '"tone_source": "inline_context"' in resp.text
+        assert "Nice post!" in resp.text
+
+
+def test_generate_uses_demo_model_and_inline_fallback(client):
+    resp = client.post(
+        "/api/generate",
+        json={
+            "context": {
+                "url": "http://127.0.0.1:8000/demo/thread",
+                "post_title": "Local Demo Thread",
+                "post_body": "Need a practical workflow for AI-assisted replies.",
+                "subreddit": "demo",
+                "comments": [
+                    {
+                        "author": "helpful_ops",
+                        "body": "Generate a few angles and pick the most human one.",
+                        "score": 42,
+                        "depth": 0,
+                    }
+                ],
+            },
+            "context_mode": "auto",
+            "draft_count": 2,
+            "model": "demo:local",
+        },
+    )
+    assert resp.status_code == 200
+    assert '"context_source": "inline_fallback"' in resp.text
+    assert "Generate a few angles" in resp.text
 
 
 def test_generate_endpoint_uses_inline_context_without_reddit_fetch(client):
@@ -188,3 +216,108 @@ def test_generate_endpoint_falls_back_to_inline_tone_when_sampling_fails(client)
         assert resp.status_code == 200
         assert '"tone_source": "inline_context"' in resp.text
         assert "Fallback tone works." in resp.text
+
+
+def test_provider_bearer_token_is_forwarded_to_backend_clients(client):
+    with respx.mock:
+        models_route = respx.get("http://localhost:8000/v1/models").mock(
+            return_value=httpx.Response(200, json={"data": [{"id": "mock-qwen"}]})
+        )
+        generate_route = respx.post("http://localhost:8000/v1/chat/completions").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "choices": [
+                        {
+                            "message": {"content": "Header-auth works."},
+                            "finish_reason": "stop",
+                        }
+                    ]
+                },
+            )
+        )
+
+        health_resp = client.get("/api/health", headers={"Authorization": "Bearer sk-demo"})
+        models_resp = client.get("/api/models", headers={"Authorization": "Bearer sk-demo"})
+        generate_resp = client.post(
+            "/api/generate",
+            headers={"Authorization": "Bearer sk-demo"},
+            json={
+                "context": {
+                    "url": "https://invalid.local/thread",
+                    "post_title": "Inline Test Post",
+                    "subreddit": "localdemo",
+                },
+                "context_mode": "inline",
+                "draft_count": 1,
+                "model": "mock-qwen",
+            },
+        )
+
+        assert health_resp.status_code == 200
+        assert models_resp.status_code == 200
+        assert generate_resp.status_code == 200
+        assert models_route.calls[0].request.headers["Authorization"] == "Bearer sk-demo"
+        assert models_route.calls[1].request.headers["Authorization"] == "Bearer sk-demo"
+        assert generate_route.calls[0].request.headers["Authorization"] == "Bearer sk-demo"
+
+        generate_resp = client.post(
+            "/api/generate",
+            headers={"Authorization": "Bearer sk-demo"},
+            json={
+                "context": {
+                    "url": "https://invalid.local/thread",
+                    "post_title": "Inline Test Post",
+                    "subreddit": "localdemo",
+                    "comments": [{"author": "demo", "body": "Inline comment", "depth": 0}],
+                },
+                "context_mode": "inline",
+                "draft_count": 1,
+                "model": "mock-qwen",
+            },
+        )
+        assert generate_resp.status_code == 200
+        assert generate_route.calls[1].request.headers["Authorization"] == "Bearer sk-demo"
+
+
+def test_x_model_api_key_header_is_forwarded(client):
+    with respx.mock:
+        models_route = respx.get("http://localhost:8000/v1/models").mock(
+            return_value=httpx.Response(200, json={"data": [{"id": "mock-qwen"}]})
+        )
+        generate_route = respx.post("http://localhost:8000/v1/chat/completions").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "choices": [
+                        {
+                            "message": {"content": "Token-header works."},
+                            "finish_reason": "stop",
+                        }
+                    ]
+                },
+            )
+        )
+
+        client.get("/api/health", headers={"X-Model-Api-Key": "sk-alt"})
+        client.get("/api/models", headers={"X-Model-Api-Key": "sk-alt"})
+        generate_resp = client.post(
+            "/api/generate",
+            headers={"X-Model-Api-Key": "sk-alt"},
+            json={
+                "context": {
+                    "url": "https://invalid.local/thread",
+                    "post_title": "Inline Test Post",
+                    "subreddit": "localdemo",
+                    "comments": [{"author": "demo", "body": "Inline comment", "depth": 0}],
+                },
+                "context_mode": "inline",
+                "draft_count": 1,
+                "model": "mock-qwen",
+            },
+        )
+
+        assert generate_resp.status_code == 200
+        assert models_route.calls[0].request.headers["Authorization"] == "Bearer sk-alt"
+        assert models_route.calls[1].request.headers["Authorization"] == "Bearer sk-alt"
+        assert generate_route.calls[0].request.headers["Authorization"] == "Bearer sk-alt"

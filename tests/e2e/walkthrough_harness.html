@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenRedditKarmaBot Walkthrough Harness</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 0;
+      padding: 24px;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    .thread, .composer-shell, .log {
+      background: #111827;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .badge {
+      color: #fb923c;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+    [contenteditable="true"] {
+      min-height: 84px;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      padding: 12px;
+      background: #020617;
+    }
+    .comment {
+      padding: 10px 0;
+      border-top: 1px solid #1e293b;
+    }
+    .comment:first-of-type {
+      border-top: none;
+    }
+    #walkthrough-status[data-status="pass"] {
+      color: #4ade80;
+    }
+    #walkthrough-status[data-status="fail"] {
+      color: #f87171;
+    }
+    li {
+      margin: 6px 0;
+    }
+  </style>
+  <script>
+    window.chrome = {
+      runtime: {
+        onMessage: { addListener() {} },
+      },
+    };
+  </script>
+  <script src="/extension/utils/bigram_timings.js"></script>
+  <script src="/extension/content/scanner.js"></script>
+  <script src="/extension/content/typing_engine.js"></script>
+  <script src="/extension/content/injector.js"></script>
+</head>
+<body>
+  <h1>OpenRedditKarmaBot Local Walkthrough</h1>
+  <p id="walkthrough-status" data-status="running">Running walkthrough...</p>
+
+  <div class="thread">
+    <div class="badge"><a href="/r/localdemo/" style="color: inherit;">r/localdemo</a></div>
+    <h1 data-testid="post-title">How should we validate this repo end to end?</h1>
+    <div data-testid="post-text-content">
+      I want a local walkthrough that proves the scanner, backend generation, and typer all work without live Reddit.
+    </div>
+    <a data-testid="post-author" href="/user/demo_author">u/demo_author</a>
+
+    <div data-testid="comment" class="comment" depth="0">
+      <a data-testid="comment-author" href="/user/alice">u/alice</a>
+      <div data-testid="comment-text-content">This local harness is already more useful than a screenshot.</div>
+      <div data-testid="comment-score">42</div>
+    </div>
+    <div data-testid="comment" class="comment" depth="1">
+      <a data-testid="comment-author" href="/user/bob">u/bob</a>
+      <div data-testid="comment-text-content">If the typer works in headless Chrome, we can trust the core flow.</div>
+      <div data-testid="comment-score">17</div>
+    </div>
+  </div>
+
+  <div class="composer-shell" data-testid="comment-composer">
+    <div id="composer" contenteditable="true" data-placeholder="Add a comment"></div>
+  </div>
+
+  <div class="log">
+    <strong>Assertions</strong>
+    <ul id="assertions"></ul>
+  </div>
+
+  <script>
+    const assertions = document.getElementById("assertions");
+    const statusEl = document.getElementById("walkthrough-status");
+
+    function record(condition, message, details) {
+      const item = document.createElement("li");
+      item.textContent = (condition ? "PASS: " : "FAIL: ") + message + (details ? " — " + details : "");
+      item.style.color = condition ? "#4ade80" : "#f87171";
+      assertions.appendChild(item);
+      if (!condition) {
+        throw new Error(message + (details ? ": " + details : ""));
+      }
+    }
+
+    async function parseSseResponse(response) {
+      const text = await response.text();
+      const events = [];
+      let currentEvent = "message";
+
+      for (const rawLine of text.split(/\r?\n/)) {
+        const line = rawLine.trim();
+        if (!line) continue;
+        if (line.startsWith("event:")) {
+          currentEvent = line.slice(6).trim();
+          continue;
+        }
+        if (!line.startsWith("data:")) continue;
+        const data = line.slice(5).trim();
+        if (!data || data === "{}") continue;
+        events.push({ event: currentEvent, data: JSON.parse(data) });
+        currentEvent = "message";
+      }
+
+      return events;
+    }
+
+    (async () => {
+      try {
+        const backend = new URLSearchParams(window.location.search).get("backend") || "http://127.0.0.1:8012";
+        const scanned = RedditScanner.scan();
+        record(scanned.subreddit === "localdemo", "scanner finds subreddit", scanned.subreddit);
+        record(scanned.post_title.includes("validate this repo"), "scanner finds post title");
+        record(scanned.comments.length === 2, "scanner finds both comments", String(scanned.comments.length));
+
+        const models = await fetch(backend + "/api/models").then((resp) => resp.json());
+        record(Array.isArray(models.models) && models.models.includes("demo:local"), "backend exposes demo:local", JSON.stringify(models));
+
+        const generateResponse = await fetch(backend + "/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            context: scanned,
+            context_mode: "inline",
+            tone: "Casual",
+            draft_count: 1,
+            model: "demo:local"
+          }),
+        });
+        record(generateResponse.ok, "generate endpoint returns 200", String(generateResponse.status));
+
+        const events = await parseSseResponse(generateResponse);
+        const meta = events.find((event) => event.event === "meta");
+        const draft = events.find((event) => event.event === "draft");
+
+        record(Boolean(meta), "meta event is present");
+        record(String(meta.data.context_source).includes("inline"), "generate uses inline context", meta.data.context_source);
+        record(meta.data.model === "demo:local", "demo model is used", meta.data.model);
+        record(Boolean(draft && draft.data.text), "draft event contains text");
+
+        const result = await CommentInjector.typeReply(draft.data.text, {
+          wpm: 12000,
+          typoSimulation: false,
+          autoSubmit: false,
+          fastMode: true,
+        });
+
+        record(result.success === true, "injector finds composer and types");
+
+        const typedText = document.getElementById("composer").textContent.trim();
+        record(
+          typedText.length > 20,
+          "typed text lands in composer",
+          typedText
+        );
+
+        statusEl.dataset.status = "pass";
+        statusEl.textContent = "Walkthrough passed";
+      } catch (error) {
+        statusEl.dataset.status = "fail";
+        statusEl.textContent = "Walkthrough failed: " + error.message;
+        console.error(error);
+      }
+    })();
+  </script>
+</body>
+</html>

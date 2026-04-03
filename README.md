@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/Chrome-MV3-F7C727?style=for-the-badge&logo=googlechrome&logoColor=333" alt="Chrome MV3" />
   <img src="https://img.shields.io/badge/vLLM-7C3AED?style=for-the-badge" alt="vLLM" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="MIT License" /></a>
-  <img src="https://img.shields.io/badge/tests-22_passing-brightgreen?style=for-the-badge" alt="Tests 22 passing" />
+  <img src="https://img.shields.io/badge/tests-31_passing-brightgreen?style=for-the-badge" alt="Tests 31 passing" />
 </p>
 
 ---
@@ -43,6 +43,9 @@
 - **Adaptive Tone Matching** -- Auto-detects subreddit culture and adjusts formality, humor density, and vocabulary to blend in
 - **Biometric Typing Engine** -- Simulates human keystroke patterns with variable WPM, bigram-level delays, micro-pauses, and occasional typo-then-backspace sequences
 - **Any LLM Backend** -- Works with vLLM, Ollama, or any OpenAI-compatible API endpoint
+- **Local Demo Mode** -- Use `demo:local` plus the built-in `/demo/thread` page to test the full flow without Reddit or a live model endpoint
+- **Popup Diagnostics** -- The extension can check backend health, list available models, and forward an optional model API token for secured endpoints
+- **Executable Walkthrough** -- A browser-driven walkthrough script exercises the scanner, backend generation, and typing engine in real Chrome against a local demo page
 - **Zero Dependencies Extension** -- Pure vanilla JS Chrome extension (Manifest V3), no build step, no node_modules
 
 ## How It Works
@@ -77,7 +80,8 @@ git clone https://github.com/jasperan/OpenRedditKarmaBot.git
 cd OpenRedditKarmaBot/backend
 pip install -e ".[dev]"
 cp .env.example .env
-# Edit .env with your vLLM/Ollama endpoint
+# For a fully local demo, set VLLM_MODEL=demo:local in .env
+# For live generation, edit .env with your vLLM/Ollama endpoint
 uvicorn app.main:app --reload
 ```
 
@@ -98,15 +102,56 @@ uvicorn app.main:app --reload
 6. Pick your favorite draft
 7. Click **Type It** and watch it type naturally into the reply box
 
+## 5-Minute Local Demo
+
+You can now try the whole flow without live Reddit or a live LLM.
+
+1. Start the backend:
+
+   ```bash
+   cd backend
+   pip install -e ".[dev]"
+   uvicorn app.main:app --reload
+   ```
+
+2. Load the unpacked extension from `extension/`
+3. Open `http://127.0.0.1:8000/demo/thread`
+4. Open the extension settings and click **Check Backend**
+5. Set **Model override** to `demo:local`
+6. Click **Scan Thread**
+7. Click **Generate Replies**
+8. Pick a draft and click **Type It**
+
+The backend serves a Reddit-like demo thread, the extension can run on localhost, and `demo:local` generates drafts even when no remote model is configured.
+
+## Local Walkthrough Automation
+
+Run a real browser walkthrough of the scanner, backend, and typing engine:
+
+```bash
+bash scripts/run_local_walkthrough.sh
+```
+
+The walkthrough script:
+
+- starts the FastAPI backend,
+- serves a local Reddit-like harness page,
+- loads the real scanner and typing-engine scripts in Chrome,
+- generates drafts with `demo:local`,
+- types a reply into the demo composer,
+- exits non-zero if any step fails.
+
 ## Configuration
 
 | Setting | Default | Description |
 |---------|---------|-------------|
 | Backend URL | `http://localhost:8000` | FastAPI server address |
 | Model | `qwen3.5:27b` | Any OpenAI-compatible model ID |
+| API token | _(blank)_ | Optional model-provider token sent as `X-Model-Api-Key` so the backend can query secured OpenAI-compatible endpoints |
 | WPM | `85` | Typing speed for biometric simulation |
 | Draft Count | `3` | Number of reply variants (1-5) |
 | Temperature | `0.8` | LLM creativity (0.0-2.0) |
+| Max tokens | `300` | Upper bound for reply length |
 
 ## Tech Stack
 
@@ -114,17 +159,28 @@ uvicorn app.main:app --reload
 - **Extension**: Vanilla JS, Chrome Manifest V3, zero build step
 - **LLM**: vLLM, Ollama, or any OpenAI-compatible endpoint
 - **Typing Engine**: Custom bigram timing model with Gaussian noise and micro-pause injection
-- **Testing**: pytest, 22 tests across backend and extension
+- **Testing**: pytest-backed backend coverage, built-in demo routes, and a real browser walkthrough script
 
 ## Testing
 
 ```bash
 cd backend
-pytest -v
+python3 -m pytest -q
 ```
 
+### Full local walkthrough
+
+This uses real Chrome plus the shipped scanner and typing scripts against the local demo harness:
+
+```bash
+bash scripts/run_local_walkthrough.sh
 ```
-22 passed in 3.2s
+
+### Additional verification
+
+```bash
+cd video
+npm run build
 ```
 
 ## License

@@ -19,6 +19,12 @@
         <div id="post-title">Click "Scan" to read the current thread</div>
       </div>
 
+      <div id="backend-summary-card" class="card compact">
+        <div class="summary-label">Backend</div>
+        <div id="backend-summary">Not checked yet</div>
+        <div id="backend-models-summary" class="muted"></div>
+      </div>
+
       <div class="controls">
         <button id="scan-btn" class="btn primary">Scan Thread</button>
 
@@ -63,13 +69,31 @@
       </div>
 
       <div class="setting-group">
-        <label for="api-key">API Key (optional)</label>
-        <input type="password" id="api-key" placeholder="Leave empty for no auth">
+        <label for="model">Model override</label>
+        <input type="text" id="model" list="model-options" placeholder="Leave blank for backend default or use demo:local">
+        <datalist id="model-options"></datalist>
+        <div class="helper-text">Use <code>demo:local</code> for a zero-LLM walkthrough or pick a discovered remote model.</div>
+      </div>
+
+      <div class="setting-group">
+        <label for="api-key">Provider API token (optional)</label>
+        <input type="password" id="api-key" placeholder="Forwarded to the model backend as a Bearer token">
+        <div class="helper-text">Passed to the backend as <code>X-Model-Api-Key</code> so secured OpenAI-compatible endpoints can still be checked and used.</div>
       </div>
 
       <div class="setting-group">
         <label for="wpm">Typing Speed (WPM)</label>
         <input type="number" id="wpm" min="30" max="200" value="85">
+      </div>
+
+      <div class="setting-group">
+        <label for="temperature">Temperature</label>
+        <input type="number" id="temperature" min="0" max="2" step="0.1" value="0.8">
+      </div>
+
+      <div class="setting-group">
+        <label for="max-tokens">Max tokens</label>
+        <input type="number" id="max-tokens" min="50" max="1000" step="10" value="300">
       </div>
 
       <div class="setting-group">
@@ -82,6 +106,11 @@
         <label>
           <input type="checkbox" id="typo-simulation"> Enable typo simulation
         </label>
+      </div>
+
+      <div class="setting-group">
+        <button id="check-backend-btn" class="btn secondary wide">Check Backend</button>
+        <div id="backend-check-status" class="helper-text">Use this to confirm connectivity and list available models.</div>
       </div>
 
       <div class="buttons-row">

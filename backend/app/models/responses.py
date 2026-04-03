@@ -5,6 +5,7 @@ class HealthResponse(BaseModel):
     status: str
     vllm_connected: bool
     model: str
+    demo_mode_available: bool = True
 
 
 class ModelsResponse(BaseModel):
