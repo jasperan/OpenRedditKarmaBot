@@ -50,3 +50,8 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Generated outputs
+dogfood-output/
+.playwright-mcp/
+content/

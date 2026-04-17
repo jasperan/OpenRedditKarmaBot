@@ -135,7 +135,7 @@ bash scripts/run_local_walkthrough.sh
 The walkthrough script:
 
 - starts the FastAPI backend,
-- serves a local Reddit-like harness page,
+- serves a local Reddit-like test page,
 - loads the real scanner and typing-engine scripts in Chrome,
 - generates drafts with `demo:local`,
 - types a reply into the demo composer,
@@ -170,7 +170,7 @@ python3 -m pytest -q
 
 ### Full local walkthrough
 
-This uses real Chrome plus the shipped scanner and typing scripts against the local demo harness:
+This uses real Chrome plus the shipped scanner and typing scripts against the local demo page:
 
 ```bash
 bash scripts/run_local_walkthrough.sh
