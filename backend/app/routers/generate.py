@@ -1,11 +1,14 @@
 import json
+import logging
 
 import httpx
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sse_starlette.sse import EventSourceResponse
 
+from app.auth import resolve_model_api_key
 from app.config import settings
 from app.models.requests import GenerateRequest
+from app.models.responses import DraftResponse
 from app.services.demo_generator import DEMO_LOCAL_MODEL, DemoGenerator
 from app.services.prompt_engine import ANGLES, PromptEngine
 from app.services.reddit_context import RedditContextService
@@ -13,23 +16,9 @@ from app.services.thread_builder import build_thread_from_context
 from app.services.tone_analyzer import ToneAnalyzer
 from app.services.vllm_client import VLLMClient
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api")
-
-
-def _extract_bearer_token(authorization: str | None) -> str:
-    if not authorization:
-        return ""
-    scheme, _, token = authorization.partition(" ")
-    if scheme.lower() != "bearer":
-        return ""
-    return token.strip()
-
-
-def _resolve_provider_api_key(
-    authorization: str | None,
-    x_model_api_key: str | None,
-) -> str:
-    return x_model_api_key or _extract_bearer_token(authorization)
 
 
 async def _resolve_thread(req: GenerateRequest, reddit: RedditContextService):
@@ -79,7 +68,12 @@ async def _resolve_culture_profile(
             sample_texts = [post["selftext"] for post in posts if post.get("selftext")]
             if sample_texts:
                 tone_source = "subreddit_sample"
-        except Exception:
+        except (httpx.HTTPError, ValueError, KeyError) as e:
+            logger.warning(
+                "Subreddit tone sampling failed for r/%s: %s",
+                thread.post.subreddit,
+                e,
+            )
             sample_texts = []
 
     return analyzer.analyze(sample_texts + comment_texts), tone_source
@@ -88,15 +82,14 @@ async def _resolve_culture_profile(
 @router.post("/generate")
 async def generate(
     req: GenerateRequest,
-    authorization: str | None = Header(default=None),
-    x_model_api_key: str | None = Header(default=None, alias="X-Model-Api-Key"),
+    api_key: str = Depends(resolve_model_api_key),
 ):
     reddit = RedditContextService(user_agent=settings.REDDIT_USER_AGENT)
     thread, target, context_source = await _resolve_thread(req, reddit)
     culture_profile, tone_source = await _resolve_culture_profile(req, reddit, thread)
 
     model = req.model or settings.VLLM_MODEL
-    provider_api_key = _resolve_provider_api_key(authorization, x_model_api_key) or settings.VLLM_API_KEY
+    provider_api_key = api_key or settings.VLLM_API_KEY
     demo_generator = DemoGenerator()
     demo_mode = model == DEMO_LOCAL_MODEL
 
@@ -146,23 +139,11 @@ async def generate(
                     temperature=req.temperature,
                     max_tokens=req.max_tokens,
                 )
-            except httpx.HTTPStatusError as e:
-                yield {"event": "error", "data": json.dumps({"error": str(e)})}
-                return
             except Exception as e:
                 yield {"event": "error", "data": json.dumps({"error": str(e)})}
                 return
-            yield {
-                "event": "draft",
-                "data": json.dumps(
-                    {
-                        "index": i,
-                        "text": text,
-                        "angle": angle_name,
-                        "done": True,
-                    }
-                ),
-            }
+            draft = DraftResponse(index=i, text=text, angle=angle_name, done=True)
+            yield {"event": "draft", "data": draft.model_dump_json()}
         yield {"event": "complete", "data": "{}"}
 
     return EventSourceResponse(event_stream())

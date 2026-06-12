@@ -78,11 +78,11 @@
 ```bash
 git clone https://github.com/jasperan/OpenRedditKarmaBot.git
 cd OpenRedditKarmaBot/backend
-pip install -e ".[dev]"
+uv sync --extra dev
 cp .env.example .env
 # For a fully local demo, set VLLM_MODEL=demo:local in .env
 # For live generation, edit .env with your vLLM/Ollama endpoint
-uvicorn app.main:app --reload
+uv run uvicorn app.main:app --reload
 ```
 
 ### Extension
@@ -110,8 +110,8 @@ You can now try the whole flow without live Reddit or a live LLM.
 
    ```bash
    cd backend
-   pip install -e ".[dev]"
-   uvicorn app.main:app --reload
+   uv sync --extra dev
+   uv run uvicorn app.main:app --reload
    ```
 
 2. Load the unpacked extension from `extension/`
@@ -165,7 +165,7 @@ The walkthrough script:
 
 ```bash
 cd backend
-python3 -m pytest -q
+uv run --extra dev pytest -q
 ```
 
 ### Full local walkthrough

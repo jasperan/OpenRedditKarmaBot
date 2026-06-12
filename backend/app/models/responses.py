@@ -24,3 +24,4 @@ class DraftResponse(BaseModel):
     index: int
     text: str
     angle: str
+    done: bool = True

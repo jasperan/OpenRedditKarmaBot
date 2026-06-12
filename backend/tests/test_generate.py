@@ -220,6 +220,9 @@ def test_generate_endpoint_falls_back_to_inline_tone_when_sampling_fails(client)
 
 def test_provider_bearer_token_is_forwarded_to_backend_clients(client):
     with respx.mock:
+        respx.get("https://www.reddit.com/r/localdemo/hot.json").mock(
+            return_value=httpx.Response(200, json={"data": {"children": []}})
+        )
         models_route = respx.get("http://localhost:8000/v1/models").mock(
             return_value=httpx.Response(200, json={"data": [{"id": "mock-qwen"}]})
         )
@@ -282,6 +285,9 @@ def test_provider_bearer_token_is_forwarded_to_backend_clients(client):
 
 def test_x_model_api_key_header_is_forwarded(client):
     with respx.mock:
+        respx.get("https://www.reddit.com/r/localdemo/hot.json").mock(
+            return_value=httpx.Response(200, json={"data": {"children": []}})
+        )
         models_route = respx.get("http://localhost:8000/v1/models").mock(
             return_value=httpx.Response(200, json={"data": [{"id": "mock-qwen"}]})
         )

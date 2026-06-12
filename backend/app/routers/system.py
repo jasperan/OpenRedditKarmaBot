@@ -1,27 +1,12 @@
-from fastapi import APIRouter, Header
+from fastapi import APIRouter, Depends
 
+from app.auth import resolve_model_api_key
 from app.config import settings
 from app.models.responses import HealthResponse, ModelsResponse
 from app.services.demo_generator import DEMO_LOCAL_MODEL
 from app.services.vllm_client import VLLMClient
 
 router = APIRouter(prefix="/api")
-
-
-def _extract_bearer_token(authorization: str | None) -> str:
-    if not authorization:
-        return ""
-    scheme, _, token = authorization.partition(" ")
-    if scheme.lower() != "bearer":
-        return ""
-    return token.strip()
-
-
-def _resolve_api_key(
-    authorization: str | None,
-    x_model_api_key: str | None,
-) -> str:
-    return x_model_api_key or _extract_bearer_token(authorization)
 
 
 def _get_vllm_client(api_key_override: str = "") -> VLLMClient:
@@ -33,11 +18,8 @@ def _get_vllm_client(api_key_override: str = "") -> VLLMClient:
 
 
 @router.get("/health", response_model=HealthResponse)
-async def health(
-    authorization: str | None = Header(default=None),
-    x_model_api_key: str | None = Header(default=None, alias="X-Model-Api-Key"),
-):
-    client = _get_vllm_client(_resolve_api_key(authorization, x_model_api_key))
+async def health(api_key: str = Depends(resolve_model_api_key)):
+    client = _get_vllm_client(api_key)
     connected = await client.health_check()
     return HealthResponse(
         status="ok" if connected else "degraded",
@@ -48,11 +30,8 @@ async def health(
 
 
 @router.get("/models", response_model=ModelsResponse)
-async def list_models(
-    authorization: str | None = Header(default=None),
-    x_model_api_key: str | None = Header(default=None, alias="X-Model-Api-Key"),
-):
-    client = _get_vllm_client(_resolve_api_key(authorization, x_model_api_key))
+async def list_models(api_key: str = Depends(resolve_model_api_key)):
+    client = _get_vllm_client(api_key)
     models = [DEMO_LOCAL_MODEL]
     try:
         remote_models = await client.list_models()

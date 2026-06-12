@@ -23,6 +23,7 @@ backend/.env
 .openhands/
 .serena/
 .omx/
+.omc/
 
 # Agent-generated plan artifacts
 docs/plans/
