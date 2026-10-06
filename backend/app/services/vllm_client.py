@@ -25,9 +25,7 @@ class VLLMClient:
             "temperature": temperature,
             "max_tokens": max_tokens,
             "stream": False,
-            "extra_body": {
-                "chat_template_kwargs": {"enable_thinking": False}
-            },
+            "chat_template_kwargs": {"enable_thinking": False},
         }
         async with httpx.AsyncClient() as http:
             resp = await http.post(
@@ -37,7 +35,7 @@ class VLLMClient:
                 timeout=60.0,
             )
             resp.raise_for_status()
-            return resp.json()["choices"][0]["message"]["content"]
+            return (resp.json()["choices"][0]["message"]["content"] or "").strip()
 
     async def list_models(self) -> list[str]:
         async with httpx.AsyncClient() as http:

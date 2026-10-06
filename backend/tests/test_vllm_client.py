@@ -72,3 +72,20 @@ async def test_health_check_fail(client):
     )
 
     assert await client.health_check() is False
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_generate_sends_chat_template_kwargs_and_handles_null_content(client):
+    route = respx.post("http://test:8000/v1/chat/completions").mock(
+        return_value=httpx.Response(
+            200, json={"choices": [{"message": {"content": None}}]}
+        )
+    )
+    result = await client.generate(system_prompt="s", user_prompt="u")
+    import json as _json
+
+    body = _json.loads(route.calls[0].request.content)
+    assert body["chat_template_kwargs"] == {"enable_thinking": False}
+    assert "extra_body" not in body
+    assert result == ""
