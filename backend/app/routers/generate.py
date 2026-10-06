@@ -33,17 +33,17 @@ async def _resolve_thread(req: GenerateRequest, reddit: RedditContextService):
             )
         return fallback_thread, fallback_target, "inline"
 
-    if req.context_mode == "live":
-        enriched_thread = await reddit.fetch_thread(req.context.url)
-        return enriched_thread, fallback_target, "live"
-
     try:
         enriched_thread = await reddit.fetch_thread(req.context.url)
         return enriched_thread, fallback_target, "live"
-    except (httpx.HTTPError, ValueError):
-        if not has_inline_context:
-            raise
-        return fallback_thread, fallback_target, "inline_fallback"
+    except (httpx.HTTPError, ValueError, KeyError, IndexError) as e:
+        if req.context_mode == "auto" and has_inline_context:
+            return fallback_thread, fallback_target, "inline_fallback"
+        status = 400 if isinstance(e, ValueError) else 502
+        raise HTTPException(
+            status_code=status,
+            detail=f"Could not load Reddit thread: {e}",
+        ) from e
 
 
 async def _resolve_culture_profile(

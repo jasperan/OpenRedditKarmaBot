@@ -1,4 +1,5 @@
-from fastapi import APIRouter
+import httpx
+from fastapi import APIRouter, HTTPException
 
 from app.config import settings
 from app.models.responses import ToneResponse
@@ -11,7 +12,12 @@ router = APIRouter(prefix="/api")
 @router.post("/analyze-tone", response_model=ToneResponse)
 async def analyze_tone(subreddit: str):
     reddit = RedditContextService(user_agent=settings.REDDIT_USER_AGENT)
-    posts = await reddit.sample_subreddit(subreddit, limit=10)
+    try:
+        posts = await reddit.sample_subreddit(subreddit, limit=10)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except (httpx.HTTPError, KeyError) as e:
+        raise HTTPException(status_code=502, detail=f"Subreddit sampling failed: {e}") from e
 
     comments_text = [p["selftext"] for p in posts if p["selftext"]]
     analyzer = ToneAnalyzer()

@@ -327,3 +327,40 @@ def test_x_model_api_key_header_is_forwarded(client):
         assert models_route.calls[0].request.headers["Authorization"] == "Bearer sk-alt"
         assert models_route.calls[1].request.headers["Authorization"] == "Bearer sk-alt"
         assert generate_route.calls[0].request.headers["Authorization"] == "Bearer sk-alt"
+
+
+def test_live_mode_bad_url_returns_400(client):
+    resp = client.post(
+        "/api/generate",
+        json={
+            "context": {"url": "https://evil.test/r/x/", "post_title": "t", "subreddit": "x"},
+            "context_mode": "live",
+            "model": "demo:local",
+        },
+    )
+    assert resp.status_code == 400
+
+
+@respx.mock
+def test_live_mode_upstream_failure_returns_502(client):
+    respx.get(
+        "https://www.reddit.com/r/x/comments/1/a.json"
+    ).mock(return_value=httpx.Response(503))
+    resp = client.post(
+        "/api/generate",
+        json={
+            "context": {
+                "url": "https://www.reddit.com/r/x/comments/1/a/",
+                "post_title": "t",
+                "subreddit": "x",
+            },
+            "context_mode": "live",
+            "model": "demo:local",
+        },
+    )
+    assert resp.status_code == 502
+
+
+def test_analyze_tone_rejects_invalid_subreddit(client):
+    resp = client.post("/api/analyze-tone", params={"subreddit": "a/../b"})
+    assert resp.status_code == 400

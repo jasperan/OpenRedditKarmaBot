@@ -1,9 +1,29 @@
 from dataclasses import dataclass, field
 import re
 
+from urllib.parse import urlsplit, urlunsplit
+
 import httpx
 
-_REDDIT_URL_RE = re.compile(r"^https://(www\.|old\.)?reddit\.com/r/")
+_REDDIT_HOSTS = {"reddit.com", "www.reddit.com", "old.reddit.com"}
+_SUBREDDIT_RE = re.compile(r"^[A-Za-z0-9_]{1,21}$")
+
+
+def _thread_json_url(url: str) -> str:
+    """Return the ``.json`` API URL for a reddit thread link.
+
+    Query strings and fragments (e.g. ``?utm_source=share``) are dropped so the
+    suffix lands on the path rather than the query.
+    """
+    parts = urlsplit(url.strip())
+    if (
+        parts.scheme != "https"
+        or parts.hostname not in _REDDIT_HOSTS
+        or parts.port not in (None, 443)
+        or not parts.path.startswith("/r/")
+    ):
+        raise ValueError(f"URL must be a reddit.com thread link: {url}")
+    return urlunsplit(("https", parts.netloc, parts.path.rstrip("/") + ".json", "", ""))
 
 
 @dataclass
@@ -37,9 +57,7 @@ class RedditContextService:
         self.headers = {"User-Agent": user_agent}
 
     async def fetch_thread(self, url: str) -> RedditThread:
-        if not _REDDIT_URL_RE.match(url):
-            raise ValueError(f"URL must be a reddit.com thread link: {url}")
-        json_url = url.rstrip("/") + ".json"
+        json_url = _thread_json_url(url)
         async with httpx.AsyncClient() as http:
             resp = await http.get(
                 json_url,
@@ -85,6 +103,8 @@ class RedditContextService:
                 self._parse_comments(c["replies"]["data"]["children"], result)
 
     async def sample_subreddit(self, subreddit: str, limit: int = 10) -> list[dict]:
+        if not _SUBREDDIT_RE.match(subreddit):
+            raise ValueError(f"Invalid subreddit name: {subreddit!r}")
         url = f"https://www.reddit.com/r/{subreddit}/hot.json"
         async with httpx.AsyncClient() as http:
             resp = await http.get(

@@ -109,3 +109,38 @@ def test_build_thread_from_inline_context():
     assert len(thread.comments) == 1
     assert thread.comments[0].author == "commenter"
     assert target is None
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_fetch_thread_strips_query_and_fragment(service, sample_thread_json):
+    route = respx.get(
+        "https://www.reddit.com/r/Entrepreneur/comments/abc123/how_i_grew.json"
+    ).mock(return_value=httpx.Response(200, json=sample_thread_json))
+
+    thread = await service.fetch_thread(
+        "https://www.reddit.com/r/Entrepreneur/comments/abc123/how_i_grew/?utm_source=share#c"
+    )
+    assert route.called
+    assert thread.post.subreddit == "Entrepreneur"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://www.reddit.com/r/x/comments/1/a/",
+        "https://reddit.com.evil.test/r/x/comments/1/a/",
+        "https://evil.test/?x=reddit.com/r/",
+        "https://user@evil.test/r/x/",
+    ],
+)
+async def test_fetch_thread_rejects_non_reddit_urls(service, url):
+    with pytest.raises(ValueError):
+        await service.fetch_thread(url)
+
+
+@pytest.mark.asyncio
+async def test_sample_subreddit_rejects_path_traversal(service):
+    with pytest.raises(ValueError):
+        await service.sample_subreddit("../../user/someone")
