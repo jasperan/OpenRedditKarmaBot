@@ -54,7 +54,7 @@
 
 **2. Generate** -- Thread context is sent to the FastAPI backend, which analyzes subreddit tone, selects an angle, and prompts the LLM with a tuned system prompt. Multiple drafts come back ranked by relevance.
 
-**3. Type** -- Pick a draft and hit "Type It." The biometric engine injects keystrokes into Reddit's comment box at variable speeds, with bigram timing, micro-pauses between words, and simulated typos that get corrected mid-stream.
+**3. Type** -- Pick a draft and hit "Type it." The biometric engine injects keystrokes into Reddit's comment box at variable speeds, with bigram timing, micro-pauses between words, and simulated typos that get corrected mid-stream.
 
 ## Architecture
 
@@ -96,11 +96,11 @@ uv run uvicorn app.main:app --reload
 
 1. Navigate to any Reddit thread
 2. Click the OpenRedditKarmaBot extension icon
-3. Click **Scan Thread** to extract context
+3. Click **Scan thread** to extract context
 4. Adjust tone, angle, and draft count
-5. Click **Generate Replies**
+5. Click **Draft replies**
 6. Pick your favorite draft
-7. Click **Type It** and watch it type naturally into the reply box
+7. Click **Type it** and watch it type naturally into the reply box
 
 ## 5-Minute Local Demo
 
@@ -116,11 +116,11 @@ You can now try the whole flow without live Reddit or a live LLM.
 
 2. Load the unpacked extension from `extension/`
 3. Open `http://127.0.0.1:8000/demo/thread`
-4. Open the extension settings and click **Check Backend**
-5. Set **Model override** to `demo:local`
-6. Click **Scan Thread**
-7. Click **Generate Replies**
-8. Pick a draft and click **Type It**
+4. Open the extension settings and click **Check backend**
+5. Set **Model** to `demo:local`
+6. Click **Scan thread**
+7. Click **Draft replies**
+8. Pick a draft and click **Type it**
 
 The backend serves a Reddit-like demo thread, the extension can run on localhost, and `demo:local` generates drafts even when no remote model is configured.
 

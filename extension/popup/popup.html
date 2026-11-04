@@ -10,24 +10,24 @@
   <div id="app">
     <header>
       <h1>OpenRedditKarmaBot</h1>
-      <button id="settings-btn" title="Settings">&#9881;</button>
+      <button id="settings-btn" class="icon-btn" title="Settings" aria-label="Settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
     </header>
 
     <div id="main-view">
       <div id="thread-info" class="card">
         <div id="subreddit-badge"></div>
-        <div id="post-title">Click "Scan" to read the current thread</div>
+        <div id="post-title">Scan the open Reddit tab to read this thread</div>
       </div>
 
       <div id="backend-summary-card" class="card compact">
         <div class="summary-label">Backend</div>
-        <div id="backend-summary">Not checked yet</div>
+        <div id="backend-summary">Not checked</div>
         <div id="backend-models-summary" class="muted"></div>
       </div>
 
       <div class="controls">
-        <button id="scan-btn" class="btn primary">Scan Thread</button>
-
         <div class="control-row">
           <label for="tone-select">Tone</label>
           <select id="tone-select">
@@ -40,77 +40,92 @@
         </div>
 
         <div class="control-row">
-          <label for="draft-count">Drafts: <span id="draft-count-display">3</span></label>
-          <input type="range" id="draft-count" min="1" max="5" value="3">
+          <label for="draft-count">Drafts</label>
+          <div class="range-row">
+            <input type="range" id="draft-count" min="1" max="5" value="3" aria-label="Number of drafts">
+            <span id="draft-count-display" class="mono">3</span>
+          </div>
         </div>
 
-        <button id="generate-btn" class="btn primary" disabled>Generate Replies</button>
+        <button id="scan-btn" class="btn secondary">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg>
+          Scan thread
+        </button>
+
+        <button id="generate-btn" class="btn primary" disabled>Draft replies</button>
       </div>
 
       <div id="drafts-container" class="hidden">
-        <h2>Drafts</h2>
+        <div class="section-label">Drafts</div>
         <div id="drafts-list"></div>
       </div>
 
       <div id="action-buttons" class="hidden">
-        <button id="type-btn" class="btn accent" disabled>Type It</button>
-        <button id="regenerate-btn" class="btn secondary">Regenerate</button>
+        <button id="type-btn" class="btn primary" disabled>
+          Type it<span class="caret" aria-hidden="true"></span>
+        </button>
+        <button id="regenerate-btn" class="btn secondary">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Redo
+        </button>
       </div>
 
       <div id="status" class="hidden"></div>
     </div>
 
     <div id="settings-view" class="hidden">
-      <h2>Settings</h2>
+      <div class="section-label">Settings</div>
 
       <div class="setting-group">
-        <label for="backend-url">Backend URL</label>
-        <input type="url" id="backend-url" placeholder="http://localhost:8000">
-      </div>
-
-      <div class="setting-group">
-        <label for="model">Model override</label>
-        <input type="text" id="model" list="model-options" placeholder="Leave blank for backend default or use demo:local">
+        <div class="group-label">Backend</div>
+        <label class="setting-row" for="backend-url">
+          <span>URL</span>
+          <input type="url" id="backend-url" placeholder="http://localhost:8000">
+        </label>
+        <label class="setting-row" for="model">
+          <span>Model</span>
+          <input type="text" id="model" list="model-options" placeholder="Backend default">
+        </label>
+        <div class="helper-text"><code>demo:local</code> runs the walkthrough without a model.</div>
+        <label class="setting-row" for="api-key">
+          <span>Provider token</span>
+          <input type="password" id="api-key" placeholder="Optional">
+        </label>
+        <div class="helper-text">Sent as <code>X-Model-Api-Key</code> to secured OpenAI-compatible endpoints.</div>
         <datalist id="model-options"></datalist>
-        <div class="helper-text">Use <code>demo:local</code> for a zero-LLM walkthrough or pick a discovered remote model.</div>
       </div>
 
       <div class="setting-group">
-        <label for="api-key">Provider API token (optional)</label>
-        <input type="password" id="api-key" placeholder="Forwarded to the model backend as a Bearer token">
-        <div class="helper-text">Passed to the backend as <code>X-Model-Api-Key</code> so secured OpenAI-compatible endpoints can still be checked and used.</div>
-      </div>
-
-      <div class="setting-group">
-        <label for="wpm">Typing Speed (WPM)</label>
-        <input type="number" id="wpm" min="30" max="200" value="85">
-      </div>
-
-      <div class="setting-group">
-        <label for="temperature">Temperature</label>
-        <input type="number" id="temperature" min="0" max="2" step="0.1" value="0.8">
-      </div>
-
-      <div class="setting-group">
-        <label for="max-tokens">Max tokens</label>
-        <input type="number" id="max-tokens" min="50" max="1000" step="10" value="300">
-      </div>
-
-      <div class="setting-group">
-        <label>
-          <input type="checkbox" id="auto-submit"> Auto-submit after typing
+        <div class="group-label">Generation</div>
+        <label class="setting-row" for="temperature">
+          <span>Temperature</span>
+          <input type="number" id="temperature" min="0" max="2" step="0.1" value="0.8">
+        </label>
+        <label class="setting-row" for="max-tokens">
+          <span>Max tokens</span>
+          <input type="number" id="max-tokens" min="50" max="1000" step="10" value="300">
         </label>
       </div>
 
       <div class="setting-group">
-        <label>
-          <input type="checkbox" id="typo-simulation"> Enable typo simulation
+        <div class="group-label">Typing</div>
+        <label class="setting-row" for="wpm">
+          <span>Speed (wpm)</span>
+          <input type="number" id="wpm" min="30" max="200" value="85">
+        </label>
+        <label class="setting-row check-row" for="auto-submit">
+          <span>Auto-submit after typing</span>
+          <input type="checkbox" id="auto-submit">
+        </label>
+        <label class="setting-row check-row" for="typo-simulation">
+          <span>Simulate typos</span>
+          <input type="checkbox" id="typo-simulation">
         </label>
       </div>
 
       <div class="setting-group">
-        <button id="check-backend-btn" class="btn secondary wide">Check Backend</button>
-        <div id="backend-check-status" class="helper-text">Use this to confirm connectivity and list available models.</div>
+        <button id="check-backend-btn" class="btn secondary wide">Check backend</button>
+        <div id="backend-check-status" class="helper-text">Checks the URL and lists available models.</div>
       </div>
 
       <div class="buttons-row">
